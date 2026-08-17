@@ -1,0 +1,24 @@
+{
+  "$schema": "https://nova.dev/schema/project.json",
+  "version": 1,
+  "schemaVersion": 1,
+  "name": "ticketing",
+  "novaVersion": "0.2.2",
+  "createdAt": "2026-08-16T07:25:39.858Z",
+  "updatedAt": "2026-08-16T07:25:39.859Z",
+  "packageManager": "pnpm",
+  "uiLibrary": "shadcn",
+  "projectType": "nextjs",
+  "plugins": [
+    "animations",
+    "designSystem",
+    "recharts",
+    "zustand"
+  ],
+  "pluginVersions": {
+    "zustand": "1.0.0",
+    "designSystem": "1.0.0",
+    "animations": "1.0.0",
+    "recharts": "1.0.0"
+  }
+}

@@ -1,0 +1,44 @@
+"use server";
+
+import { revalidateTicket } from "@/cache";
+import { ApiError } from "@/lib/api/types";
+import { replyToTicket } from "@/services/ticket-service";
+
+export interface ActionResult {
+  success: boolean;
+  error?: string;
+  replyId?: number;
+}
+
+export async function replyTicketAction(
+  ticketId: number | string,
+  _prevState: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const text = (formData.get("Text") as string)?.trim();
+  const attachment = formData.get("attachment") as File | null;
+
+  if (!text) {
+    return { success: false, error: "متن پاسخ الزامی است (Reply text is required)" };
+  }
+
+  try {
+    const payload = new FormData();
+    payload.append("Text", text);
+
+    if (attachment && attachment.size > 0) {
+      payload.append("attachment", attachment);
+    }
+
+    const res = await replyToTicket(ticketId, payload);
+    revalidateTicket(ticketId);
+
+    return { success: true, replyId: res?.replyId };
+  } catch (error) {
+    const message =
+      error instanceof ApiError
+        ? error.message
+        : "خطا در ارسال پاسخ. لطفا دوباره تلاش کنید.";
+    return { success: false, error: message };
+  }
+}

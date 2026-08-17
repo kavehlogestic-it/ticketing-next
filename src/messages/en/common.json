@@ -1,0 +1,40 @@
+{
+  "appName": "Ticketing Hub",
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "tickets": "Tickets",
+    "newTicket": "New Ticket",
+    "groups": "Groups"
+  },
+  "roles": {
+    "responder": "Responder",
+    "user": "User",
+    "admin": "Admin"
+  },
+  "status": {
+    "all": "All",
+    "pending": "Pending",
+    "underReview": "Under Review",
+    "inProgress": "In Progress",
+    "read": "Read",
+    "closed": "Closed"
+  },
+  "actions": {
+    "login": "Sign In",
+    "logout": "Sign Out",
+    "loggingOut": "Signing out...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "loading": "Loading...",
+    "close": "Close",
+    "view": "View",
+    "download": "Download"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  }
+}

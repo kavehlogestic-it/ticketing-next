@@ -1,0 +1,40 @@
+{
+  "appName": "سامانه پشتیبانی و تیکتینگ",
+  "nav": {
+    "home": "صفحه اصلی",
+    "dashboard": "داشبورد",
+    "tickets": "تیکت‌ها",
+    "newTicket": "ثبت تیکت جدید",
+    "groups": "گروه‌ها"
+  },
+  "roles": {
+    "responder": "پشتیبان",
+    "user": "کاربر",
+    "admin": "مدیر سیستم"
+  },
+  "status": {
+    "all": "همه",
+    "pending": "در انتظار بررسی",
+    "underReview": "در حال بررسی",
+    "inProgress": "در حال انجام",
+    "read": "خوانده شده",
+    "closed": "بسته شده"
+  },
+  "actions": {
+    "login": "ورود به سیستم",
+    "logout": "خروج",
+    "loggingOut": "در حال خروج...",
+    "save": "ذخیره",
+    "cancel": "انصراف",
+    "submit": "ثبت",
+    "loading": "در حال بارگذاری...",
+    "close": "بستن",
+    "view": "مشاهده",
+    "download": "دانلود"
+  },
+  "theme": {
+    "light": "روشن",
+    "dark": "تاریک",
+    "system": "سیستم"
+  }
+}

@@ -1,0 +1,179 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Base surfaces */
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+
+    /* Card & panel surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Primary brand (Enterprise Indigo/Blue) */
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Secondary surface & elements */
+    --secondary: 210 25% 94%;
+    --secondary-foreground: 222 47% 14%;
+
+    /* Muted text & backgrounds */
+    --muted: 210 20% 94%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Accent & interactive hover */
+    --accent: 210 25% 92%;
+    --accent-foreground: 222 47% 14%;
+
+    /* Semantic destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Borders, inputs, rings */
+    --border: 214 20% 89%;
+    --input: 214 20% 89%;
+    --ring: 221 83% 53%;
+    --radius: 0.625rem;
+
+    /* Chat bubble colors (Light) */
+    --chat-bubble-user: 210 30% 96%;
+    --chat-bubble-user-border: 214 20% 90%;
+    --chat-bubble-user-text: 222 47% 11%;
+
+    --chat-bubble-support: 221 83% 97%;
+    --chat-bubble-support-border: 221 83% 90%;
+    --chat-bubble-support-text: 222 47% 11%;
+  }
+
+  .dark {
+    /* Base surfaces (Multi-layer midnight slate) */
+    --background: 222 47% 7%;
+    --foreground: 210 40% 98%;
+
+    /* Card & panel surfaces */
+    --card: 222 44% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 44% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Primary brand */
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 7%;
+
+    /* Secondary surface & elements */
+    --secondary: 222 35% 16%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Muted text & backgrounds */
+    --muted: 222 35% 15%;
+    --muted-foreground: 215 20% 65%;
+
+    /* Accent & interactive hover */
+    --accent: 222 35% 18%;
+    --accent-foreground: 210 40% 98%;
+
+    /* Semantic destructive */
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Borders, inputs, rings */
+    --border: 222 30% 19%;
+    --input: 222 30% 19%;
+    --ring: 217 91% 60%;
+
+    /* Chat bubble colors (Dark) */
+    --chat-bubble-user: 222 35% 14%;
+    --chat-bubble-user-border: 222 30% 22%;
+    --chat-bubble-user-text: 210 40% 98%;
+
+    --chat-bubble-support: 222 45% 16%;
+    --chat-bubble-support-border: 217 70% 30%;
+    --chat-bubble-support-text: 210 40% 98%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  html,
+  body {
+    font-family: var(--font-vazirmatn), Tahoma, sans-serif;
+  }
+}
+
+/* Interactive focus animations */
+input,
+textarea,
+select,
+button {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  animation: focus-ring-bounce 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes focus-ring-bounce {
+  0% {
+    box-shadow: 0 0 0 0px hsl(var(--background)), 0 0 0 0px hsl(var(--ring) / 0.8);
+  }
+  50% {
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 5px hsl(var(--ring) / 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 3px hsl(var(--ring));
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Custom smooth scrollbar for chat message container */
+.chat-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+}
+
+.chat-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scroll-container::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.25);
+  border-radius: 9999px;
+}
+
+.chat-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
