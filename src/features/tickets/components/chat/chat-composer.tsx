@@ -2,40 +2,32 @@
 
 import { AlertCircle, Lock, Paperclip, Send, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { type ChangeEvent, useActionState, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, type FormEvent, useRef, useState, useTransition } from "react";
 
 import { Spinner } from "@/components/common/spinner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { type ActionResult, replyTicketAction } from "@/features/tickets/actions/reply-ticket-action";
+import { replyTicketAction } from "@/features/tickets/actions/reply-ticket-action";
 
 interface ChatComposerProps {
   ticketId: number;
   disabled?: boolean;
+  onOptimisticSend?: (text: string, attachmentName?: string | null) => void;
 }
 
-const initialState: ActionResult = { success: false };
-
-export function ChatComposer({ ticketId, disabled = false }: ChatComposerProps) {
+export function ChatComposer({
+  ticketId,
+  disabled = false,
+  onOptimisticSend,
+}: ChatComposerProps) {
   const t = useTranslations("tickets.chat");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const formRef = useRef<HTMLFormElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
-
-  const boundAction = replyTicketAction.bind(null, ticketId);
-  const [state, formAction, isPending] = useActionState(boundAction, initialState);
-
-  useEffect(() => {
-    if (state.success) {
-      formRef.current?.reset();
-      setSelectedFile(null);
-      setFileError(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      textareaRef.current?.focus();
-    }
-  }, [state.success]);
+  const [text, setText] = useState("");
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFileError(null);
@@ -64,6 +56,38 @@ export function ChatComposer({ ticketId, disabled = false }: ChatComposerProps) 
     }
   };
 
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    const trimmed = text.trim();
+    if (!trimmed || isPending) return;
+
+    setActionError(null);
+
+    // Optimistically render the message in the chat immediately!
+    const fileToSend = selectedFile;
+    if (onOptimisticSend) {
+      onOptimisticSend(trimmed, fileToSend ? fileToSend.name : null);
+    }
+
+    // Reset input fields right away so user can type next message
+    setText("");
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.append("Text", trimmed);
+      if (fileToSend && fileToSend.size > 0) {
+        formData.append("attachment", fileToSend);
+      }
+
+      const res = await replyTicketAction(ticketId, { success: false }, formData);
+      if (!res.success) {
+        setActionError(res.error || "خطا در ارسال پاسخ");
+      }
+    });
+  };
+
   if (disabled) {
     return (
       <div className="border-t bg-muted/40 p-4 text-center">
@@ -77,7 +101,7 @@ export function ChatComposer({ ticketId, disabled = false }: ChatComposerProps) 
 
   return (
     <div className="border-t bg-card p-3 sm:p-4 shadow-sm z-10">
-      <form ref={formRef} action={formAction} className="space-y-2.5">
+      <form onSubmit={handleSubmit} className="space-y-2.5">
         {/* Selected Attachment Chip Preview */}
         {selectedFile ? (
           <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/60 px-3 py-1 text-xs font-mono">
@@ -133,6 +157,8 @@ export function ChatComposer({ ticketId, disabled = false }: ChatComposerProps) 
             <Textarea
               ref={textareaRef}
               name="Text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
               rows={2}
               required
               placeholder={t("replyPlaceholder")}
@@ -142,7 +168,7 @@ export function ChatComposer({ ticketId, disabled = false }: ChatComposerProps) 
                 // Submit on Ctrl+Enter or Cmd+Enter
                 if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
                   e.preventDefault();
-                  formRef.current?.requestSubmit();
+                  handleSubmit(e);
                 }
               }}
             />
@@ -152,7 +178,7 @@ export function ChatComposer({ ticketId, disabled = false }: ChatComposerProps) 
           <Button
             type="submit"
             size="icon"
-            disabled={isPending}
+            disabled={isPending || !text.trim()}
             className="h-10 w-10 shrink-0 rounded-xl shadow-xs"
             title={t("sendReply")}
           >
@@ -161,10 +187,10 @@ export function ChatComposer({ ticketId, disabled = false }: ChatComposerProps) 
         </div>
 
         {/* Error message */}
-        {state.error ? (
+        {actionError ? (
           <div className="flex items-center gap-1.5 text-xs text-destructive pt-1">
             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-            <span>{state.error}</span>
+            <span>{actionError}</span>
           </div>
         ) : null}
       </form>

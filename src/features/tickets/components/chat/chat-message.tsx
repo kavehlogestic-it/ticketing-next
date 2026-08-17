@@ -10,35 +10,47 @@ import { formatDate } from "@/utils/date";
 
 interface ChatMessageProps {
   reply: TicketReply;
+  currentUserAccountId?: number;
 }
 
-export function ChatMessage({ reply }: ChatMessageProps) {
+export function ChatMessage({ reply, currentUserAccountId }: ChatMessageProps) {
   const locale = useLocale();
   const t = useTranslations("common");
+
+  // Determine if the message was sent by the currently logged-in user
+  const isSelf =
+    currentUserAccountId !== undefined
+      ? reply.accountId === currentUserAccountId
+      : reply.roleId !== 1;
+
   const isResponder = reply.roleId === 1;
 
   return (
     <div
-      className={`flex items-start gap-3 my-3 transition-opacity ${
-        isResponder ? "justify-start" : "justify-end"
+      className={`flex items-start gap-2.5 my-3.5 transition-all ${
+        isSelf
+          ? "justify-start rtl:justify-start ltr:justify-end"
+          : "justify-end rtl:justify-end ltr:justify-start"
       }`}
     >
-      {/* Responder Avatar (Leading) */}
-      {isResponder ? (
+      {/* Avatar on Right side for User's own messages */}
+      {isSelf ? (
         <div
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xs mt-1"
-          title={t("roles.responder")}
+          title={reply.accountFullName || t("roles.user")}
         >
-          <Headphones className="h-4 w-4" />
+          <UserIcon className="h-4 w-4" />
         </div>
       ) : null}
 
       {/* Message Bubble Card */}
       <div
         className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 shadow-2xs border transition-colors ${
-          isResponder
-            ? "bg-chat-support text-chat-support-text border-chat-support-border rounded-tl-xs"
-            : "bg-card text-foreground border-border rounded-tr-xs"
+          isSelf
+            ? "bg-primary/10 text-foreground border-primary/20 rounded-tr-xs rtl:rounded-tr-xs ltr:rounded-tl-xs"
+            : isResponder
+              ? "bg-chat-support text-chat-support-text border-chat-support-border rounded-tl-xs rtl:rounded-tl-xs ltr:rounded-tr-xs"
+              : "bg-card text-foreground border-border rounded-tl-xs rtl:rounded-tl-xs ltr:rounded-tr-xs"
         }`}
       >
         {/* Author Header & Badge */}
@@ -48,7 +60,7 @@ export function ChatMessage({ reply }: ChatMessageProps) {
               {reply.accountFullName || (isResponder ? t("roles.responder") : t("roles.user"))}
             </span>
             <Badge
-              variant={isResponder ? "default" : "outline"}
+              variant={isResponder ? "default" : isSelf ? "secondary" : "outline"}
               className="text-[9px] py-0 px-1.5 h-3.5 font-normal"
             >
               {isResponder ? t("roles.responder") : t("roles.user")}
@@ -73,13 +85,17 @@ export function ChatMessage({ reply }: ChatMessageProps) {
         ) : null}
       </div>
 
-      {/* User Avatar (Trailing) */}
-      {!isResponder ? (
+      {/* Avatar on Left side for Support / Other Party messages */}
+      {!isSelf ? (
         <div
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground border shadow-xs mt-1"
-          title={t("roles.user")}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground border shadow-xs mt-1"
+          title={isResponder ? t("roles.responder") : t("roles.user")}
         >
-          <UserIcon className="h-4 w-4 text-muted-foreground" />
+          {isResponder ? (
+            <Headphones className="h-4 w-4 text-primary" />
+          ) : (
+            <UserIcon className="h-4 w-4" />
+          )}
         </div>
       ) : null}
     </div>

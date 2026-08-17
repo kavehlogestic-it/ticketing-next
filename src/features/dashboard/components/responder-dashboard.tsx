@@ -2,7 +2,7 @@
 
 import {
   AlertTriangle,
-  ArrowRight,
+  ArrowLeft,
   CheckCircle,
   Clock,
   Headphones,
@@ -117,7 +117,7 @@ export function ResponderDashboard({
             <Button asChild variant="outline" size="default" className="gap-2">
               <Link href="/groups">
                 <span>{t("userGroups")}</span>
-                <ArrowRight className="h-4 w-4" />
+                <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
           </div>
@@ -166,7 +166,7 @@ export function ResponderDashboard({
           <Button asChild variant="ghost" size="sm" className="gap-1 text-xs text-muted-foreground hover:text-foreground">
             <Link href="/tickets">
               <span>{t("seeAll")}</span>
-              <ArrowRight className="h-3.5 w-3.5" />
+              <ArrowLeft className="h-3.5 w-3.5" />
             </Link>
           </Button>
         </div>

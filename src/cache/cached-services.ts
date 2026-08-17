@@ -36,7 +36,7 @@ export async function getCachedUserGroups(token?: string | null): Promise<UserGr
  */
 export async function getCachedTicketById(id: number | string, token?: string | null): Promise<TicketDetail> {
   "use cache";
-  cacheLife("minutes");
+  cacheLife("seconds");
   cacheTag(CACHE_TAGS.TICKET_DETAIL(id), CACHE_TAGS.TICKETS);
   return fetchTicketById(id, token);
 }
@@ -46,7 +46,7 @@ export async function getCachedTicketById(id: number | string, token?: string | 
  */
 export async function getCachedTickets(params: TicketFilterParams = {}, token?: string | null): Promise<PaginatedTickets> {
   "use cache";
-  cacheLife("minutes");
+  cacheLife("seconds");
   cacheTag(CACHE_TAGS.TICKETS);
   return fetchTickets(params, token);
 }

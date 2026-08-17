@@ -7,18 +7,26 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChatMessage } from "@/features/tickets/components/chat/chat-message";
 import { ChatOriginalTicket } from "@/features/tickets/components/chat/chat-original-ticket";
-import type { TicketDetail } from "@/types/ticket";
+import type { TicketDetail, TicketReply } from "@/types/ticket";
 
 interface ChatScrollAreaProps {
   ticket: TicketDetail;
+  replies?: TicketReply[];
+  currentUserAccountId?: number;
 }
 
-export function ChatScrollArea({ ticket }: ChatScrollAreaProps) {
+export function ChatScrollArea({
+  ticket,
+  replies,
+  currentUserAccountId,
+}: ChatScrollAreaProps) {
   const t = useTranslations("tickets.chat");
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomMarkerRef = useRef<HTMLDivElement>(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
+
+  const activeReplies = replies ?? ticket.replies ?? [];
 
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
     bottomMarkerRef.current?.scrollIntoView({ behavior });
@@ -39,7 +47,7 @@ export function ChatScrollArea({ ticket }: ChatScrollAreaProps) {
     if (!userHasScrolledUp) {
       scrollToBottom("smooth");
     }
-  }, [ticket.replies?.length, userHasScrolledUp]);
+  }, [activeReplies.length, userHasScrolledUp]);
 
   // Track scroll position
   const handleScroll = () => {
@@ -79,10 +87,14 @@ export function ChatScrollArea({ ticket }: ChatScrollAreaProps) {
         <ChatOriginalTicket ticket={ticket} />
 
         {/* Replies Thread */}
-        {ticket.replies && ticket.replies.length > 0 ? (
+        {activeReplies.length > 0 ? (
           <div className="space-y-3">
-            {ticket.replies.map((reply) => (
-              <ChatMessage key={reply.replyId} reply={reply} />
+            {activeReplies.map((reply) => (
+              <ChatMessage
+                key={reply.replyId}
+                reply={reply}
+                currentUserAccountId={currentUserAccountId}
+              />
             ))}
           </div>
         ) : null}

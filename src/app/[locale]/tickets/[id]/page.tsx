@@ -8,8 +8,7 @@ import { getCachedTicketById } from "@/cache";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChangeStatusDialog } from "@/features/tickets/components/change-status-dialog";
-import { ChatComposer } from "@/features/tickets/components/chat/chat-composer";
-import { ChatScrollArea } from "@/features/tickets/components/chat/chat-scroll-area";
+import { TicketChatThread } from "@/features/tickets/components/chat/ticket-chat-thread";
 import { TicketInfoPanel } from "@/features/tickets/components/chat/ticket-info-panel";
 import { CloseTicketDialog } from "@/features/tickets/components/close-ticket-dialog";
 import { TicketStatusBadge } from "@/features/tickets/components/ticket-status-badge";
@@ -117,14 +116,14 @@ async function TicketDetailContent({ params }: TicketDetailPageProps) {
 
       {/* Main Ticket Workspace: Left Chat Column + Full-Height Right Info Panel */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
-        {/* Left Column: Chat Conversation Thread + Bottom Composer */}
-        <section className="flex-1 flex flex-col min-h-0 min-w-0 bg-background/50">
-          {/* Scrollable message timeline - ONLY this container scrolls */}
-          <ChatScrollArea ticket={ticket} />
-
-          {/* Fixed bottom reply composer */}
-          <ChatComposer ticketId={ticket.ticketId} disabled={!canReply} />
-        </section>
+        {/* Left Column: Live Chat Conversation Thread + Bottom Composer */}
+        <TicketChatThread
+          ticket={ticket}
+          currentUserAccountId={user.accountId}
+          currentUserFullName={user.fullName || user.username}
+          currentUserRoleId={user.roleId}
+          canReply={canReply}
+        />
 
         {/* Right Column: Desktop Full-Height Sticky Ticket Information & Actions Panel */}
         <aside className="hidden lg:flex w-80 lg:w-96 shrink-0 h-full border-s border-border bg-card flex-col min-h-0">
