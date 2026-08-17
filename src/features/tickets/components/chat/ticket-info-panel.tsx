@@ -20,6 +20,9 @@ export function TicketInfoPanel({
   showClose,
   showRating,
 }: TicketInfoPanelProps) {
+  const hasExistingRating =
+    ticket.ticketRate?.rate != null && ticket.ticketRate.rate > 0;
+
   return (
     <div className="w-full h-full flex-1 flex flex-col min-h-0 overflow-y-auto">
       <div className="p-5 space-y-6">
@@ -43,10 +46,15 @@ export function TicketInfoPanel({
           </div>
         )}
 
-        {/* Rating card if eligible */}
-        {showRating && (
+        {/* Rating card if eligible to rate OR if existing rating exists */}
+        {(showRating || hasExistingRating) && (
           <div className="pt-2 border-t">
-            <TicketRating ticketId={ticket.ticketId} />
+            <TicketRating
+              ticketId={ticket.ticketId}
+              existingRating={ticket.ticketRate?.rate ?? null}
+              existingDescription={ticket.ticketRate?.description ?? null}
+              readOnly={!showRating && hasExistingRating}
+            />
           </div>
         )}
 

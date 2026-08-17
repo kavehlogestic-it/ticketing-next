@@ -13,17 +13,22 @@ import { rateTicketAction } from "@/features/tickets/actions/rate-ticket-action"
 interface TicketRatingProps {
   ticketId: number;
   existingRating?: number | null;
+  existingDescription?: string | null;
+  readOnly?: boolean;
 }
 
 export function TicketRating({
   ticketId,
   existingRating = null,
+  existingDescription = null,
+  readOnly = false,
 }: TicketRatingProps) {
   const t = useTranslations("tickets.rating");
   const [rating, setRating] = useState<number>(existingRating || 0);
   const [hoverRating, setHoverRating] = useState<number>(0);
-  const [comment, setComment] = useState<string>("");
+  const [description, setDescription] = useState<string>(existingDescription || "");
   const [submittedRating, setSubmittedRating] = useState<number | null>(existingRating);
+  const [submittedDescription, setSubmittedDescription] = useState<string | null>(existingDescription);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -36,7 +41,7 @@ export function TicketRating({
       return;
     }
 
-    if (isLowRating && !comment.trim()) {
+    if (isLowRating && !description.trim()) {
       setError("برای امتیازهای کمتر از ۳ ستاره، نوشتن دلیل نارضایتی الزامی است.");
       return;
     }
@@ -45,9 +50,10 @@ export function TicketRating({
     setError(null);
 
     try {
-      const res = await rateTicketAction(ticketId, rating, comment);
+      const res = await rateTicketAction(ticketId, rating, description);
       if (res.success) {
         setSubmittedRating(rating);
+        setSubmittedDescription(description);
         setSuccess(true);
       } else {
         setError(res.error || "سرویس ثبت امتیاز در بک‌اند در دسترس نیست.");
@@ -62,32 +68,55 @@ export function TicketRating({
   // If already rated / submitted
   if (submittedRating !== null && submittedRating > 0) {
     return (
-      <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 sm:p-5">
+      <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 sm:p-5 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h4 className="font-semibold text-foreground text-sm">
-              {t("yourRating")}
+            <h4 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
+              <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+              <span>{t("yourRating")}</span>
             </h4>
             <p className="text-xs text-muted-foreground mt-0.5">
               {t("thankYou")}
             </p>
           </div>
 
-          <div className="flex items-center gap-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                className={`h-5 w-5 ${
-                  star <= submittedRating
-                    ? "fill-amber-400 text-amber-400"
-                    : "text-muted-foreground/30"
-                }`}
-              />
-            ))}
+          <div className="flex items-center gap-1.5 bg-background/80 px-2.5 py-1 rounded-lg border border-border/60">
+            <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
+              {submittedRating} / 5
+            </span>
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`h-4 w-4 ${
+                    star <= submittedRating
+                      ? "fill-amber-400 text-amber-400"
+                      : "text-muted-foreground/30"
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* Display feedback comment/description if recorded */}
+        {submittedDescription && submittedDescription.trim() ? (
+          <div className="rounded-lg bg-background/60 p-3 border border-border/40 text-xs text-foreground space-y-1">
+            <span className="text-[11px] font-semibold text-muted-foreground block">
+              توضیحات و بازخورد ثبت شده:
+            </span>
+            <p className="leading-relaxed text-muted-foreground whitespace-pre-wrap">
+              {submittedDescription}
+            </p>
+          </div>
+        ) : null}
       </div>
     );
+  }
+
+  // If read-only mode and not rated yet
+  if (readOnly) {
+    return null;
   }
 
   return (
@@ -160,9 +189,9 @@ export function TicketRating({
           <Textarea
             id="rating-comment"
             rows={3}
-            value={comment}
+            value={description}
             onChange={(e) => {
-              setComment(e.target.value);
+              setDescription(e.target.value);
               if (error) setError(null);
             }}
             placeholder={

@@ -45,14 +45,13 @@ export function canChangeTicketStatus(user: User | null | undefined): boolean {
 export function canRateTicket(
   user: User | null | undefined,
   ticket: TicketSummary | TicketDetail | null | undefined,
-  hasExistingRating = false,
 ): boolean {
   if (!user || !ticket) return false;
   // Only normal users (issuers) can rate
   if (!isTicketIssuer(user)) return false;
   // Ticket must be closed
   if (!isClosedStatus(ticket.ticketStatus)) return false;
-  // Must not have been rated yet
-  if (hasExistingRating) return false;
+  // If already rated, cannot submit a new rating
+  if (ticket.ticketRate?.rate != null && ticket.ticketRate.rate > 0) return false;
   return true;
 }

@@ -51,7 +51,8 @@
     "participants": "مشارکت‌کنندگان",
     "issuer": "ایجادکننده تیکت",
     "supportTeam": "تیم پشتیبانی فنی",
-    "responder": "پاسخ‌دهنده"
+    "responder": "پاسخ‌دهنده",
+    "userRating": "امتیاز ثبت شده:"
   },
   "dialogs": {
     "changeStatusTitle": "تغییر وضعیت تیکت",

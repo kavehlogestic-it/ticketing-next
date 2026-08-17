@@ -1,4 +1,4 @@
-import { Calendar, Clock, FolderTree, Hash, Tag } from "lucide-react";
+import { Calendar, Clock, FolderTree, Hash, Star, Tag } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,33 @@ export function TicketMetaDetails({ ticket }: TicketMetaDetailsProps) {
           </span>
           <TicketStatusBadge status={ticket.ticketStatus} />
         </div>
+
+        {/* User Rating (if available) */}
+        {ticket.ticketRate?.rate != null && ticket.ticketRate.rate > 0 ? (
+          <div className="flex items-center justify-between py-1">
+            <span className="text-muted-foreground flex items-center gap-1.5">
+              <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+              <span>{t("userRating")}</span>
+            </span>
+            <div className="flex items-center gap-1 font-medium text-foreground text-end">
+              <span className="font-mono text-xs text-amber-600 dark:text-amber-400 font-bold">
+                {ticket.ticketRate.rate} / 5
+              </span>
+              <div className="flex items-center">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`h-3 w-3 ${
+                      star <= (ticket.ticketRate?.rate ?? 0)
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-muted-foreground/20"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Category */}
         <div className="flex items-center justify-between py-1">

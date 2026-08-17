@@ -51,7 +51,8 @@
     "participants": "Participants",
     "issuer": "Ticket Issuer",
     "supportTeam": "Support Team",
-    "responder": "Responder"
+    "responder": "Responder",
+    "userRating": "User Rating:"
   },
   "dialogs": {
     "changeStatusTitle": "Change Ticket Status",

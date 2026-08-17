@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Hash, MessageSquare, Paperclip, User as UserIcon } from "lucide-react";
+import { Calendar, Hash, MessageSquare, Paperclip, Star, User as UserIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,12 @@ export function TicketCard({ ticket }: TicketCardProps) {
               #{ticket.ticketId}
             </Badge>
             <TicketStatusBadge status={ticket.ticketStatus} />
+            {ticket.ticketRate?.rate != null && ticket.ticketRate.rate > 0 ? (
+              <span className="inline-flex items-center gap-1 text-xs text-amber-500 font-mono font-semibold bg-amber-500/10 px-1.5 py-0.5 rounded">
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                <span>{ticket.ticketRate.rate}</span>
+              </span>
+            ) : null}
           </div>
 
           {ticket.ticketGroupTitle ? (

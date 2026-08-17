@@ -24,6 +24,11 @@ export interface UserGroup {
   userGroupTitle: string;
 }
 
+export interface TicketRate {
+  rate: number | null;
+  description: string | null;
+}
+
 export interface TicketSummary {
   ticketId: number;
   ticketSubject: string;
@@ -37,10 +42,7 @@ export interface TicketSummary {
   trackCode: string;
   departmentId: number;
   replyCount: number;
-  ticketRate?: {
-    rate: number | null;
-    description: string | null;
-  },
+  ticketRate?: TicketRate | null;
 }
 
 export interface TicketReply {

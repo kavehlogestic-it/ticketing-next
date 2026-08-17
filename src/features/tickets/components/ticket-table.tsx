@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare, Paperclip } from "lucide-react";
+import { MessageSquare, Paperclip, Star } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
@@ -53,7 +53,18 @@ export function TicketTable({ tickets }: TicketTableProps) {
                 </Link>
               </td>
               <td className="px-4 py-3.5 whitespace-nowrap">
-                <TicketStatusBadge status={ticket.ticketStatus} />
+                <div className="flex items-center gap-1.5">
+                  <TicketStatusBadge status={ticket.ticketStatus} />
+                  {ticket.ticketRate?.rate != null && ticket.ticketRate.rate > 0 ? (
+                    <span
+                      className="inline-flex items-center gap-0.5 text-xs text-amber-500 font-mono font-semibold"
+                      title={`امتیاز: ${ticket.ticketRate.rate} از ۵`}
+                    >
+                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                      <span>{ticket.ticketRate.rate}</span>
+                    </span>
+                  ) : null}
+                </div>
               </td>
               <td className="px-4 py-3.5 whitespace-nowrap">
                 {ticket.ticketGroupTitle ? (
