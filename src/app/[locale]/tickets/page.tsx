@@ -3,7 +3,7 @@ import { getLocale } from "next-intl/server";
 import { Suspense } from "react";
 
 import TicketsLoading from "@/app/[locale]/tickets/loading";
-import { getCachedTickets } from "@/cache";
+import { getCachedTickets, getCachedUserGroups } from "@/cache";
 import { AppFooter } from "@/components/layout/app-footer";
 import { Button } from "@/components/ui/button";
 import { TicketCard } from "@/features/tickets/components/ticket-card";
@@ -13,7 +13,7 @@ import { Link, redirect } from "@/i18n/navigation";
 import { isTicketIssuer } from "@/lib/auth/permissions";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getAccessToken } from "@/lib/auth/token-store";
-import type { PaginatedTickets } from "@/types/ticket";
+import type { PaginatedTickets, UserGroup } from "@/types/ticket";
 
 interface TicketsContentProps {
   searchParams: Promise<{
@@ -21,6 +21,7 @@ interface TicketsContentProps {
     pageSize?: string;
     status?: string;
     search?: string;
+    userGroupType?: string;
   }>;
 }
 
@@ -39,17 +40,29 @@ async function TicketsContent({ searchParams }: TicketsContentProps) {
   const pageSize = parseInt(params.pageSize || "20", 10);
   const status = params.status || "";
   const search = params.search || "";
+  const userGroupType = params.userGroupType || "";
 
   let ticketsData: PaginatedTickets = { total: 0, page: 1, pageSize: 20, items: [] };
+  let userGroups: UserGroup[] = [];
   let fetchError: string | null = null;
 
   try {
-    ticketsData = await getCachedTickets({
-      page,
-      pageSize,
-      status: status || undefined,
-      search: search || undefined,
-    }, token);
+    const [ticketsRes, groupsRes] = await Promise.all([
+      getCachedTickets(
+        {
+          page,
+          pageSize,
+          status: status || undefined,
+          search: search || undefined,
+          userGroupType: userGroupType || undefined,
+        },
+        token,
+      ),
+      getCachedUserGroups(token),
+    ]);
+
+    ticketsData = ticketsRes;
+    userGroups = groupsRes;
   } catch (err) {
     fetchError = err instanceof Error ? err.message : "خطا در دریافت لیست تیکت‌ها";
   }
@@ -95,6 +108,8 @@ async function TicketsContent({ searchParams }: TicketsContentProps) {
         pageSize={ticketsData.pageSize}
         currentStatus={status}
         currentSearch={search}
+        currentUserGroupType={userGroupType}
+        userGroups={userGroups}
       />
 
       {/* Error state */}
@@ -148,14 +163,18 @@ interface TicketsPageProps {
     pageSize?: string;
     status?: string;
     search?: string;
+    userGroupType?: string;
   }>;
 }
 
-export default function TicketsPage({ searchParams }: TicketsPageProps) {
+export default async function TicketsPage({ searchParams }: TicketsPageProps) {
+  const sp = await searchParams;
+  const key = `${sp.page || "1"}_${sp.status || ""}_${sp.search || ""}_${sp.userGroupType || ""}`;
+
   return (
     <div className="flex-1 min-h-0 overflow-y-auto flex flex-col justify-between">
       <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <Suspense fallback={<TicketsLoading />}>
+        <Suspense key={key} fallback={<TicketsLoading />}>
           <TicketsContent searchParams={searchParams} />
         </Suspense>
       </main>

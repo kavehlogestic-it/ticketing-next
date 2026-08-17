@@ -8,7 +8,9 @@
     "next": "بعدی",
     "pageOf": "صفحه {current} از {total}",
     "noTicketsFound": "هیچ تیکتی با مشخصات وارد شده یافت نشد.",
-    "clearFilters": "پاک کردن فیلترها"
+    "clearFilters": "پاک کردن فیلترها",
+    "userGroupFilter": "فیلتر گروه کاربری",
+    "allUserGroups": "همه گروه‌های کاربری"
   },
   "table": {
     "ticketId": "شناسه",

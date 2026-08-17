@@ -19,6 +19,14 @@ export async function getTickets(
   if (params.search && params.search.trim() !== "") {
     queryParams.search = params.search.trim();
   }
+  if (
+    params.userGroupType !== undefined &&
+    params.userGroupType !== null &&
+    String(params.userGroupType) !== "" &&
+    String(params.userGroupType) !== "all"
+  ) {
+    queryParams.userGroupType = Number(params.userGroupType);
+  }
 
   const response = await api.get<PaginatedTickets | TicketSummary[]>(API_ENDPOINTS.TICKETS.LIST, {
     params: queryParams,

@@ -8,7 +8,9 @@
     "next": "Next",
     "pageOf": "Page {current} of {total}",
     "noTicketsFound": "No tickets found matching your criteria.",
-    "clearFilters": "Clear Filters"
+    "clearFilters": "Clear Filters",
+    "userGroupFilter": "User Group Filter",
+    "allUserGroups": "All User Groups"
   },
   "table": {
     "ticketId": "ID",

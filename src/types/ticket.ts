@@ -72,6 +72,7 @@ export interface TicketFilterParams {
   search?: string;
   page?: number;
   pageSize?: number;
+  userGroupType?: number | string;
 }
 
 export interface CreateTicketPayload {
