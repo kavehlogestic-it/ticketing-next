@@ -2,6 +2,8 @@
 
 import { revalidateTicket } from "@/cache";
 import { ApiError } from "@/lib/api/types";
+import { getCurrentUser } from "@/lib/auth/session";
+import { NotificationHub } from "@/lib/realtime/notification-hub";
 import { createTicket } from "@/services/ticket-service";
 
 export interface ActionResult {
@@ -34,7 +36,7 @@ export async function createTicketAction(
     payload.append("TicketGroupId", String(groupId));
     payload.append("TicketSubject", subject);
     payload.append("TicketDescription", description);
-    
+
     const dept = formData.get("DepartmentSelectList");
     if (dept) {
       payload.append("DepartmentSelectList", String(dept));
@@ -47,6 +49,22 @@ export async function createTicketAction(
 
     const res = await createTicket(payload);
     revalidateTicket(res?.ticketId);
+
+    // Dispatch real-time LAN notification
+    if (res?.ticketId) {
+      const user = await getCurrentUser();
+      NotificationHub.publishEvent({
+        type: "ticket.created",
+        title: `تیکت جدید #${res.ticketId}`,
+        message: subject,
+        ticketId: res.ticketId,
+        groupId,
+        actorId: user?.accountId,
+        actorName: user?.fullName || user?.username,
+        targetRoles: [1],
+        recipientGroupIds: [groupId],
+      });
+    }
 
     return { success: true, ticketId: res?.ticketId };
   } catch (error) {

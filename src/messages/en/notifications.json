@@ -1,0 +1,50 @@
+{
+  "title": "Notifications & Events",
+  "unread": "Unread",
+  "all": "All",
+  "markAllAsRead": "Mark all as read",
+  "noNotifications": "No notifications yet.",
+  "noUnreadNotifications": "No unread notifications.",
+  "loading": "Loading notifications...",
+  "error": "Failed to connect to notification service",
+  "retry": "Retry",
+  "justNow": "Just now",
+  "minutesAgo": "{count}m ago",
+  "hoursAgo": "{count}h ago",
+  "daysAgo": "{count}d ago",
+  "connection": {
+    "connected": "Connected to LAN Server",
+    "connecting": "Connecting to server...",
+    "disconnected": "Disconnected (Reconnecting...)",
+    "reconnecting": "Reconnecting to real-time server..."
+  },
+  "settings": {
+    "title": "Notification Settings",
+    "description": "Configure LAN real-time notifications, sounds, and category preferences.",
+    "desktopTitle": "Browser Desktop Notifications",
+    "desktopDesc": "Display native desktop notifications when new tickets or replies arrive",
+    "permissionGranted": "Desktop notifications enabled",
+    "permissionDenied": "Permission blocked in browser",
+    "permissionDefault": "Permission not requested yet",
+    "requestPermission": "Enable Desktop Notifications",
+    "soundTitle": "Notification Sound",
+    "soundDesc": "Play a subtle harmonic chime when new events arrive",
+    "testSound": "Test Sound",
+    "categories": "Notification Categories",
+    "newTickets": "New tickets created",
+    "ticketAssignments": "Tickets assigned to you",
+    "newReplies": "New replies and messages",
+    "statusChanges": "Ticket status changes",
+    "closedTickets": "Ticket closures",
+    "groupNotifications": "Your user group tickets",
+    "save": "Save Preferences",
+    "saved": "Settings saved successfully."
+  },
+  "events": {
+    "newTicketTitle": "New Ticket #{id}",
+    "newReplyTitle": "New Reply on Ticket #{id}",
+    "statusChangedTitle": "Status Changed for Ticket #{id}",
+    "ticketClosedTitle": "Ticket #{id} Closed",
+    "assignedTitle": "Ticket #{id} Assigned to You"
+  }
+}

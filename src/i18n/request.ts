@@ -5,6 +5,7 @@ import commonEn from "@/messages/en/common.json";
 import dashboardEn from "@/messages/en/dashboard.json";
 import homeEn from "@/messages/en/home.json";
 import metadataEn from "@/messages/en/metadata.json";
+import notificationsEn from "@/messages/en/notifications.json";
 import ticketsEn from "@/messages/en/tickets.json";
 import validationEn from "@/messages/en/validation.json";
 import authFa from "@/messages/fa/auth.json";
@@ -12,6 +13,7 @@ import commonFa from "@/messages/fa/common.json";
 import dashboardFa from "@/messages/fa/dashboard.json";
 import homeFa from "@/messages/fa/home.json";
 import metadataFa from "@/messages/fa/metadata.json";
+import notificationsFa from "@/messages/fa/notifications.json";
 import ticketsFa from "@/messages/fa/tickets.json";
 import validationFa from "@/messages/fa/validation.json";
 
@@ -21,6 +23,7 @@ const messagesMap = {
     auth: authFa,
     dashboard: dashboardFa,
     tickets: ticketsFa,
+    notifications: notificationsFa,
     validation: validationFa,
     home: homeFa,
     metadata: metadataFa,
@@ -30,6 +33,7 @@ const messagesMap = {
     auth: authEn,
     dashboard: dashboardEn,
     tickets: ticketsEn,
+    notifications: notificationsEn,
     validation: validationEn,
     home: homeEn,
     metadata: metadataEn,
@@ -42,7 +46,7 @@ export function getStaticMessages(locale: string) {
 
 export default getRequestConfig(async ({ requestLocale }) => {
   const requested = await requestLocale;
-  const locale = (requested === "en" || requested === "fa") ? requested : "fa";
+  const locale = requested === "en" || requested === "fa" ? requested : "fa";
 
   return {
     locale,
