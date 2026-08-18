@@ -2,8 +2,7 @@
 
 import { revalidateTicket } from "@/cache";
 import { ApiError } from "@/lib/api/types";
-import { getCurrentUser } from "@/lib/auth/session";
-import { NotificationHub } from "@/lib/realtime/notification-hub";
+import { getAccessToken } from "@/lib/auth/token-store";
 import { replyToTicket } from "@/services/ticket-service";
 
 export interface ActionResult {
@@ -25,6 +24,7 @@ export async function replyTicketAction(
   }
 
   try {
+    const token = await getAccessToken();
     const payload = new FormData();
     payload.append("Text", text);
 
@@ -32,21 +32,8 @@ export async function replyTicketAction(
       payload.append("attachment", attachment);
     }
 
-    const res = await replyToTicket(ticketId, payload);
+    const res = await replyToTicket(ticketId, payload, token);
     revalidateTicket(ticketId);
-
-    // Dispatch real-time LAN notification
-    const user = await getCurrentUser();
-    const idNum = Number(ticketId);
-    NotificationHub.publishEvent({
-      type: "ticket.reply.created",
-      title: `پاسخ جدید در تیکت #${idNum}`,
-      message: text.slice(0, 120),
-      ticketId: idNum,
-      actorId: user?.accountId,
-      actorName: user?.fullName || user?.username,
-      targetRoles: [1],
-    });
 
     return { success: true, replyId: res?.replyId };
   } catch (error) {

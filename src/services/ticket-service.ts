@@ -70,11 +70,31 @@ export async function replyToTicket(
   formData: FormData,
   token?: string | null,
 ): Promise<{ success: boolean; replyId?: number }> {
-  return api.postForm<{ success: boolean; replyId?: number }>(
-    API_ENDPOINTS.TICKETS.REPLY(ticketId),
-    formData,
-    { token },
-  );
+  const attachment = formData.get("attachment") as File | null;
+  const text = (formData.get("Text") as string) || (formData.get("text") as string) || "";
+
+  if (attachment && attachment.size > 0) {
+    return api.postForm<{ success: boolean; replyId?: number }>(
+      API_ENDPOINTS.TICKETS.REPLY(ticketId),
+      formData,
+      { token },
+    );
+  }
+
+  // Try JSON first (for [FromBody] controllers), fallback to FormData
+  try {
+    return await api.post<{ success: boolean; replyId?: number }>(
+      API_ENDPOINTS.TICKETS.REPLY(ticketId),
+      { text, Text: text },
+      { token },
+    );
+  } catch {
+    return await api.postForm<{ success: boolean; replyId?: number }>(
+      API_ENDPOINTS.TICKETS.REPLY(ticketId),
+      formData,
+      { token },
+    );
+  }
 }
 
 export async function closeTicket(

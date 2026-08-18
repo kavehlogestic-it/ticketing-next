@@ -32,12 +32,9 @@ export async function getCachedUserGroups(token?: string | null): Promise<UserGr
 }
 
 /**
- * Data-level caching for ticket detail using Cache Components
+ * Direct non-cached fetch for ticket detail (caching disabled)
  */
 export async function getCachedTicketById(id: number | string, token?: string | null): Promise<TicketDetail> {
-  "use cache";
-  cacheLife("seconds");
-  cacheTag(CACHE_TAGS.TICKET_DETAIL(id), CACHE_TAGS.TICKETS);
   return fetchTicketById(id, token);
 }
 

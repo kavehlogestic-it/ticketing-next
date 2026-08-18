@@ -1,10 +1,10 @@
 import { ArrowRight } from "lucide-react";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { getLocale } from "next-intl/server";
 import { Suspense } from "react";
 
 import TicketDetailLoading from "@/app/[locale]/tickets/[id]/loading";
-import { getCachedTicketById } from "@/cache";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChangeStatusDialog } from "@/features/tickets/components/change-status-dialog";
@@ -21,6 +21,7 @@ import {
 } from "@/lib/auth/permissions";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getAccessToken } from "@/lib/auth/token-store";
+import { getTicketById } from "@/services/ticket-service";
 import type { TicketDetail } from "@/types/ticket";
 
 interface TicketDetailPageProps {
@@ -30,6 +31,7 @@ interface TicketDetailPageProps {
 }
 
 async function TicketDetailContent({ params }: TicketDetailPageProps) {
+  await connection();
   const locale = await getLocale();
   const user = await getCurrentUser();
   const token = await getAccessToken();
@@ -47,7 +49,7 @@ async function TicketDetailContent({ params }: TicketDetailPageProps) {
 
   let ticket: TicketDetail | null = null;
   try {
-    ticket = await getCachedTicketById(ticketId, token);
+    ticket = await getTicketById(ticketId, token);
   } catch {
     notFound();
   }
@@ -123,6 +125,7 @@ async function TicketDetailContent({ params }: TicketDetailPageProps) {
           currentUserFullName={user.fullName || user.username}
           currentUserRoleId={user.roleId}
           canReply={canReply}
+          token={token}
         />
 
         {/* Right Column: Desktop Full-Height Sticky Ticket Information & Actions Panel */}

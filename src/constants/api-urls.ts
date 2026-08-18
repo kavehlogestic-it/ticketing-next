@@ -25,6 +25,7 @@ export const API_ENDPOINTS = {
     RATING: (id: number | string) => `/api/tickets/${id}/rate`,
     ATTACHMENT_BASE: "/ticket/attachments",
     ATTACHMENT_URL: (fileName: string) => `/ticket/attachments/${fileName}`,
+    SIGNALR_HUB: `${API_BASE_URL}/ticketHub`,
   },
   GROUPS: {
     TICKET_GROUPS: "/api/ticket-groups",
