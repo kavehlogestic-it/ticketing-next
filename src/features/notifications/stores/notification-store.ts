@@ -15,6 +15,8 @@ interface NotificationStoreState {
   unreadCount: number;
   preferences: NotificationPreferences;
   activeToast: AppNotification | null;
+  /** The ticket ID currently being viewed in the chat. Null when not in any chat. */
+  activeTicketId: number | null;
 
   // Actions
   addNotification: (notif: Omit<AppNotification, "id" | "createdAt" | "isRead">) => void;
@@ -24,6 +26,7 @@ interface NotificationStoreState {
   dismissToast: () => void;
   updatePreferences: (prefs: Partial<NotificationPreferences>) => void;
   loadFromStorage: () => void;
+  setActiveTicketId: (ticketId: number | null) => void;
 }
 
 const defaultPreferences: NotificationPreferences = {
@@ -36,6 +39,7 @@ export const useNotificationStore = create<NotificationStoreState>((set, get) =>
   unreadCount: 0,
   preferences: defaultPreferences,
   activeToast: null,
+  activeTicketId: null,
 
   loadFromStorage: () => {
     if (typeof window === "undefined") return;
@@ -61,6 +65,21 @@ export const useNotificationStore = create<NotificationStoreState>((set, get) =>
   },
 
   addNotification: (incoming) => {
+    const state = get();
+
+    // Deduplicate: skip if same type+ticketId+actorId was added in the last 3 seconds.
+    // This prevents double notifications when both GlobalSignalRListener and
+    // the chat thread's per-ticket subscription fire for the same event.
+    const now = Date.now();
+    const isDuplicate = state.notifications.some((n) => {
+      if (n.type !== incoming.type) return false;
+      if (n.ticketId !== incoming.ticketId) return false;
+      if (n.actorId !== incoming.actorId) return false;
+      const age = now - new Date(n.createdAt).getTime();
+      return age < 3000; // 3-second window
+    });
+    if (isDuplicate) return;
+
     const newNotif: AppNotification = {
       ...incoming,
       id: `notif_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -68,7 +87,6 @@ export const useNotificationStore = create<NotificationStoreState>((set, get) =>
       isRead: false,
     };
 
-    const state = get();
     const updatedNotifs = [newNotif, ...state.notifications].slice(0, 50); // Keep last 50
     const unreadCount = updatedNotifs.filter((n) => !n.isRead).length;
 
@@ -81,24 +99,34 @@ export const useNotificationStore = create<NotificationStoreState>((set, get) =>
       }
     }
 
+    // If the user is currently viewing this ticket's chat, persist the
+    // notification to the list but DON'T fire toast / sound / desktop –
+    // they're already seeing the messages live in real-time.
+    const isViewingThisTicket =
+      newNotif.ticketId != null &&
+      state.activeTicketId != null &&
+      newNotif.ticketId === state.activeTicketId;
+
     set({
       notifications: updatedNotifs,
       unreadCount,
-      activeToast: newNotif,
+      activeToast: isViewingThisTicket ? state.activeToast : newNotif,
     });
 
-    // Sound alert
-    if (state.preferences.soundEnabled) {
-      soundSynthesizer.playChime().catch(() => {});
-    }
+    if (!isViewingThisTicket) {
+      // Sound alert
+      if (state.preferences.soundEnabled) {
+        soundSynthesizer.playChime().catch(() => {});
+      }
 
-    // Desktop notification
-    if (state.preferences.desktopEnabled) {
-      showDesktopNotification(newNotif);
-    }
+      // Desktop notification
+      if (state.preferences.desktopEnabled) {
+        showDesktopNotification(newNotif);
+      }
 
-    // Tab attention flashing
-    tabAttentionManager.flash(newNotif.title);
+      // Tab attention flashing
+      tabAttentionManager.flash(newNotif.title);
+    }
   },
 
   markAsRead: (id: string) => {
@@ -169,5 +197,9 @@ export const useNotificationStore = create<NotificationStoreState>((set, get) =>
       }
     }
     set({ preferences: updated });
+  },
+
+  setActiveTicketId: (ticketId) => {
+    set({ activeTicketId: ticketId });
   },
 }));

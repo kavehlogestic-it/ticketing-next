@@ -35,6 +35,7 @@ export function TicketChatThread({
   const [status, setStatus] = useState<SignalRStatus>("connecting");
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
+  const setActiveTicketId = useNotificationStore((s) => s.setActiveTicketId);
   const addNotification = useNotificationStore((s) => s.addNotification);
   const preferences = useNotificationStore((s) => s.preferences);
   const updatePreferences = useNotificationStore((s) => s.updatePreferences);
@@ -45,6 +46,15 @@ export function TicketChatThread({
     setLiveReplies([]);
     setOptimisticReplies([]);
   }, [ticket.ticketId]);
+
+  // Mark this ticket as actively viewed so the notification store
+  // suppresses duplicate toast/sound/desktop for it
+  useEffect(() => {
+    setActiveTicketId(Number(ticket.ticketId));
+    return () => {
+      setActiveTicketId(null);
+    };
+  }, [ticket.ticketId, setActiveTicketId]);
 
   // Connect purely to SignalR /ticketHub for real-time replies
   useEffect(() => {
@@ -59,7 +69,10 @@ export function TicketChatThread({
           return [...prev, incomingReply];
         });
 
-        // Trigger notification if reply is from another party
+        // Trigger notification for replies from other users.
+        // The store's activeTicketId suppression prevents toast/sound/desktop
+        // since the user is already viewing this chat, but it still persists
+        // the notification to the list for history.
         if (
           incomingReply.accountId !== currentUserAccountId &&
           incomingReply.accountId !== 0
