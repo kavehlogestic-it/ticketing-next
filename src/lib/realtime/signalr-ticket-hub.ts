@@ -86,6 +86,26 @@ export function subscribeToTicketSignalR(
 
   onStatusChange?.("connecting");
 
+  const silentLogger = {
+    log: (logLevel: LogLevel, message: string) => {
+      if (
+        message.includes("stopped during negotiation") ||
+        message.includes("The connection was stopped") ||
+        message.includes("Connection closed with an error") ||
+        message.includes("Server returned an error on close") ||
+        message.includes("negotiation") ||
+        message.includes("abort") ||
+        message.includes("canceled") ||
+        message.includes("stopped")
+      ) {
+        return;
+      }
+      if (logLevel >= LogLevel.Warning) {
+        console.warn("[SignalR]", message);
+      }
+    },
+  };
+
   const buildConnection = (url: string) => {
     return new HubConnectionBuilder()
       .withUrl(url, {
@@ -93,7 +113,7 @@ export function subscribeToTicketSignalR(
         transport: HttpTransportType.WebSockets | HttpTransportType.LongPolling,
       })
       .withAutomaticReconnect([0, 1500, 3000, 5000, 10000, 30000])
-      .configureLogging(LogLevel.Information)
+      .configureLogging(LogLevel.None)
       .build();
   };
 
@@ -172,9 +192,12 @@ export function subscribeToTicketSignalR(
   let startPromise: Promise<void> | null = null;
 
   const joinGroupAndFetch = async (conn: HubConnection) => {
+    if (isNaN(targetIdNum) || targetIdNum <= 0) return;
+
     try {
-      const res = await conn.invoke("JoinTicketGroup", ticketId);
-      console.log(`[SignalR] Joined ticket group with (string): ${ticketId}`, res);
+      // Backend expects integer ticketId parameter (int ticketId)
+      const res = await conn.invoke("JoinTicketGroup", targetIdNum);
+      console.log(`[SignalR] Joined ticket room #${targetIdNum}`, res);
       if (res) {
         const normalized = normalizeRepliesList(res);
         if (normalized.length > 0) {
@@ -182,33 +205,18 @@ export function subscribeToTicketSignalR(
         }
       }
     } catch {
-      if (!isNaN(targetIdNum) && targetIdNum > 0) {
-        try {
-          const res = await conn.invoke("JoinTicketGroup", targetIdNum);
-          console.log(`[SignalR] Joined ticket group with (int): ${targetIdNum}`, res);
-          if (res) {
-            const normalized = normalizeRepliesList(res);
-            if (normalized.length > 0) {
-              onRepliesListReceived?.(normalized);
-            }
+      // Fallback: try as string if backend uses string parameter
+      try {
+        const res = await conn.invoke("JoinTicketGroup", ticketId);
+        if (res) {
+          const normalized = normalizeRepliesList(res);
+          if (normalized.length > 0) {
+            onRepliesListReceived?.(normalized);
           }
-        } catch (err) {
-          console.error("Failed to join ticket group:", err);
         }
+      } catch {
+        // Ignore join error
       }
-    }
-
-    // Also attempt invoking GetTicketReplies if hub provides it
-    try {
-      const repliesRes = await conn.invoke("GetTicketReplies", ticketId);
-      if (repliesRes) {
-        const normalized = normalizeRepliesList(repliesRes);
-        if (normalized.length > 0) {
-          onRepliesListReceived?.(normalized);
-        }
-      }
-    } catch {
-      // Ignore if hub doesn't implement GetTicketReplies
     }
   };
 

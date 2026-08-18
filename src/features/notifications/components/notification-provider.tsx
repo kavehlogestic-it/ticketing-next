@@ -27,14 +27,14 @@ export function NotificationProvider({
   }, [loadFromStorage]);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser?.accountId) {
       soundSynthesizer.unlock();
       realtimeClient.connect();
       return () => {
         realtimeClient.disconnect();
       };
     }
-  }, [currentUser]);
+  }, [currentUser?.accountId]);
 
   return (
     <>
