@@ -122,7 +122,7 @@ export function TicketChatThread({
           {status === "connected" ? (
             <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>ارتباط زنده فعال (SignalR Live)</span>
+              <span>ارتباط زنده فعال</span>
             </span>
           ) : status === "connecting" ? (
             <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">

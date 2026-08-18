@@ -82,6 +82,7 @@ export function ChatComposer({
       }
 
       const res = await replyTicketAction(ticketId, { success: false }, formData);
+      console.log("replyTicketAction result:", res);
       if (!res.success) {
         setActionError(res.error || "خطا در ارسال پاسخ");
       }
