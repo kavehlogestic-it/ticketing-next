@@ -1,6 +1,6 @@
 import "@/styles/globals.css";
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
@@ -74,6 +74,13 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
+export const viewport: Viewport = {
+  themeColor: "#0f172a",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
@@ -86,6 +93,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: metadata?.title || "سامانه پشتیبانی و تیکتینگ",
     description: metadata?.description || "سیستم تیکتینگ سازمانی",
+    manifest: "/manifest.json",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: "تیکتینگ",
+    },
+    icons: {
+      icon: [
+        { url: "/favicon.png", sizes: "192x192", type: "image/png" },
+        { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+      ],
+      apple: [
+        { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      ],
+      shortcut: ["/favicon.png"],
+    },
   };
 }
 

@@ -38,8 +38,13 @@ export function LoginHeroShowcase() {
       {/* Main Headline */}
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-            <LifeBuoy className="h-6 w-6" />
+          <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl overflow-hidden shadow-md border border-slate-700/60 bg-slate-900 shrink-0 p-0.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icons/icon-192x192.png"
+              alt="سامانه مدیریت تیکت"
+              className="h-full w-full object-cover rounded-xl"
+            />
           </div>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-foreground">
             سامانه مدیریت تیکت و پشتیبانی

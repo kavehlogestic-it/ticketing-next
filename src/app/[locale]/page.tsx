@@ -36,9 +36,19 @@ export default function RootLoginPage() {
           <div className="lg:col-span-5 w-full max-w-md mx-auto">
             <div className="rounded-2xl border border-border/80 bg-card p-6 sm:p-8 shadow-md">
               <div className="space-y-2 pb-6 border-b mb-6 text-center sm:text-start">
-                <Badge variant="outline" className="text-xs font-mono mb-1">
-                  پورتال دسترسی
-                </Badge>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="relative h-10 w-10 rounded-xl overflow-hidden shadow-xs border border-border/60 bg-slate-900 shrink-0 p-0.5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/icons/icon-192x192.png"
+                      alt="لوگوی سامانه تیکتینگ"
+                      className="h-full w-full object-cover rounded-lg"
+                    />
+                  </div>
+                  <Badge variant="outline" className="text-xs font-mono">
+                    پورتال دسترسی
+                  </Badge>
+                </div>
                 <h2 className="text-xl font-bold tracking-tight text-foreground">
                   ورود به حساب کاربری
                 </h2>

@@ -106,8 +106,13 @@ export function Header({ locale = "fa" }: HeaderProps) {
         {/* Brand / Logo */}
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="flex items-center gap-2.5 font-bold text-foreground">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
-              <LifeBuoy className="h-5 w-5" />
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shadow-xs border border-border/60 bg-slate-900 shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/icons/icon-192x192.png"
+                alt={t.appName}
+                className="h-full w-full object-cover rounded-xl"
+              />
             </div>
             <span className="text-base font-extrabold tracking-tight">
               {t.appName}

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#090d16" />
+      <stop offset="100%" stop-color="#040711" />
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="50%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#eab308" />
+      <stop offset="100%" stop-color="#ca8a04" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <!-- App Icon Base -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  
+  <!-- Outer Glow Shield -->
+  <path d="M256 72 L384 128 V240 C384 328 328 408 256 440 C184 408 128 328 128 240 V128 Z" fill="none" stroke="#10b981" stroke-width="6" opacity="0.4" filter="url(#glow)" />
+  
+  <!-- Main Shield -->
+  <path d="M256 80 L376 132 V236 C376 320 324 396 256 428 C188 396 136 320 136 236 V132 Z" fill="url(#shieldGrad)" stroke="#334155" stroke-width="4" />
+  
+  <!-- Chat Bubble with Emerald Border -->
+  <circle cx="256" cy="244" r="86" fill="#064e3b" fill-opacity="0.3" stroke="url(#emeraldGrad)" stroke-width="12" filter="url(#glow)" />
+  <path d="M304 300 L328 336 L284 316 Z" fill="#047857" stroke="url(#emeraldGrad)" stroke-width="4" />
+
+  <!-- Gold Checkmark -->
+  <path d="M212 244 L244 276 L308 208" fill="none" stroke="url(#goldGrad)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)" />
+</svg>
