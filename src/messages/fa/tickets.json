@@ -39,7 +39,8 @@
     "download": "دانلود",
     "downloadOriginal": "دانلود فایل اصلی",
     "openNewTab": "نمایش در تب جدید",
-    "ticketClosedNotice": "این تیکت بسته شده است و امکان ارسال پاسخ جدید وجود ندارد."
+    "ticketClosedNotice": "این تیکت بسته شده است و امکان ارسال پاسخ جدید وجود ندارد.",
+    "scrollToBottom": "رفتن به پیام‌های جدید"
   },
   "meta": {
     "actions": "عملیات تیکت",

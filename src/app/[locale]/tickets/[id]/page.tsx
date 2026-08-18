@@ -11,6 +11,7 @@ import { ChangeStatusDialog } from "@/features/tickets/components/change-status-
 import { TicketChatThread } from "@/features/tickets/components/chat/ticket-chat-thread";
 import { TicketInfoPanel } from "@/features/tickets/components/chat/ticket-info-panel";
 import { CloseTicketDialog } from "@/features/tickets/components/close-ticket-dialog";
+import { MobileTicketInfoButton } from "@/features/tickets/components/chat/mobile-ticket-info-button";
 import { TicketStatusBadge } from "@/features/tickets/components/ticket-status-badge";
 import { Link, redirect } from "@/i18n/navigation";
 import {
@@ -102,15 +103,25 @@ async function TicketDetailContent({ params }: TicketDetailPageProps) {
           </div>
 
           {/* Quick Header Actions (Visible on Mobile / Tablet) */}
-          <div className="flex items-center gap-2 self-end sm:self-center lg:hidden">
+          <div className="flex items-center gap-1.5 sm:gap-2 self-end sm:self-center shrink-0">
+            <MobileTicketInfoButton
+              ticket={ticket}
+              showChangeStatus={showChangeStatus}
+              showClose={showClose}
+              showRating={showRating}
+            />
             {showChangeStatus && (
-              <ChangeStatusDialog
-                ticketId={ticket.ticketId}
-                currentStatus={ticket.ticketStatus}
-              />
+              <div className="lg:hidden">
+                <ChangeStatusDialog
+                  ticketId={ticket.ticketId}
+                  currentStatus={ticket.ticketStatus}
+                />
+              </div>
             )}
             {showClose && (
-              <CloseTicketDialog ticketId={ticket.ticketId} />
+              <div className="lg:hidden">
+                <CloseTicketDialog ticketId={ticket.ticketId} />
+              </div>
             )}
           </div>
         </div>

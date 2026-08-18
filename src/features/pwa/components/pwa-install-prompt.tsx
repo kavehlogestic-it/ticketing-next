@@ -44,7 +44,7 @@ export function PWAInstallPrompt() {
   return (
     <>
       {/* Floating Bottom-Right / Bottom-Center Install Banner */}
-      <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-40 animate-in slide-in-from-bottom-5 duration-300">
+      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)] left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-40 animate-in slide-in-from-bottom-5 duration-300">
         <div className="flex items-center gap-3.5 p-3.5 bg-card/95 backdrop-blur-md border border-border/80 rounded-2xl shadow-xl">
           {/* App Icon */}
           <div className="relative h-12 w-12 rounded-xl overflow-hidden shrink-0 border border-border shadow-xs bg-slate-900 p-0.5">

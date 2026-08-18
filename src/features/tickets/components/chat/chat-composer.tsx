@@ -101,7 +101,7 @@ export function ChatComposer({
   }
 
   return (
-    <div className="border-t bg-card p-3 sm:p-4 shadow-sm z-10">
+    <div className="border-t bg-card p-3 sm:p-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] shadow-sm z-10">
       <form onSubmit={handleSubmit} className="space-y-2.5">
         {/* Selected Attachment Chip Preview */}
         {selectedFile ? (

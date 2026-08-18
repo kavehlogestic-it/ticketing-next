@@ -39,7 +39,8 @@
     "download": "Download",
     "downloadOriginal": "Download Original",
     "openNewTab": "Open in New Tab",
-    "ticketClosedNotice": "This ticket is closed. New replies cannot be submitted."
+    "ticketClosedNotice": "This ticket is closed. New replies cannot be submitted.",
+    "scrollToBottom": "Jump to latest messages"
   },
   "meta": {
     "actions": "Ticket Actions",

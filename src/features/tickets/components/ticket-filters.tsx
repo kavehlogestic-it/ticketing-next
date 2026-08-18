@@ -18,6 +18,7 @@ interface TicketFiltersProps {
   currentSearch?: string;
   currentUserGroupType?: string;
   userGroups?: UserGroup[];
+  showUserGroupFilter?: boolean;
 }
 
 export function TicketFilters({
@@ -28,6 +29,7 @@ export function TicketFilters({
   currentSearch = "",
   currentUserGroupType = "",
   userGroups = [],
+  showUserGroupFilter = false,
 }: TicketFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -94,11 +96,13 @@ export function TicketFilters({
             onSearchChange={(search) => updateFilters({ search })}
           />
         </div>
-        <TicketUserGroupFilter
-          userGroups={userGroups}
-          currentUserGroupType={currentUserGroupType}
-          onUserGroupChange={(userGroupType) => updateFilters({ userGroupType })}
-        />
+        {showUserGroupFilter && userGroups.length > 0 && (
+          <TicketUserGroupFilter
+            userGroups={userGroups}
+            currentUserGroupType={currentUserGroupType}
+            onUserGroupChange={(userGroupType) => updateFilters({ userGroupType })}
+          />
+        )}
       </div>
 
       {/* Status Filter Tabs */}

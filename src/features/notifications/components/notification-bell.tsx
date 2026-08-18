@@ -95,7 +95,7 @@ export function NotificationBell() {
 
       {/* Popover Panel */}
       {isOpen && (
-        <div className="absolute end-0 mt-2 w-80 sm:w-96 rounded-2xl border border-border bg-card shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 overflow-hidden flex flex-col max-h-[500px]">
+        <div className="absolute end-0 mt-2 w-[calc(100vw-1.5rem)] sm:w-96 max-w-sm sm:max-w-md rounded-2xl border border-border bg-card shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 overflow-hidden flex flex-col max-h-[80dvh] sm:max-h-[500px]">
           {/* Header */}
           <div className="flex items-center justify-between border-b px-4 py-3 bg-muted/30">
             <div className="flex items-center gap-2">

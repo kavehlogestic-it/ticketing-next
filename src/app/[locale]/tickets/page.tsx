@@ -10,7 +10,7 @@ import { TicketCard } from "@/features/tickets/components/ticket-card";
 import { TicketFilters } from "@/features/tickets/components/ticket-filters";
 import { TicketTable } from "@/features/tickets/components/ticket-table";
 import { Link, redirect } from "@/i18n/navigation";
-import { isTicketIssuer } from "@/lib/auth/permissions";
+import { isResponder, isTicketIssuer } from "@/lib/auth/permissions";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getAccessToken } from "@/lib/auth/token-store";
 import type { PaginatedTickets, UserGroup } from "@/types/ticket";
@@ -42,6 +42,9 @@ async function TicketsContent({ searchParams }: TicketsContentProps) {
   const search = params.search || "";
   const userGroupType = params.userGroupType || "";
 
+  const responder = isResponder(user);
+  const issuer = isTicketIssuer(user);
+
   let ticketsData: PaginatedTickets = { total: 0, page: 1, pageSize: 20, items: [] };
   let userGroups: UserGroup[] = [];
   let fetchError: string | null = null;
@@ -54,11 +57,11 @@ async function TicketsContent({ searchParams }: TicketsContentProps) {
           pageSize,
           status: status || undefined,
           search: search || undefined,
-          userGroupType: userGroupType || undefined,
+          userGroupType: responder ? (userGroupType || undefined) : undefined,
         },
         token,
       ),
-      getCachedUserGroups(token),
+      responder ? getCachedUserGroups(token) : Promise.resolve([]),
     ]);
 
     ticketsData = ticketsRes;
@@ -66,8 +69,6 @@ async function TicketsContent({ searchParams }: TicketsContentProps) {
   } catch (err) {
     fetchError = err instanceof Error ? err.message : "خطا در دریافت لیست تیکت‌ها";
   }
-
-  const issuer = isTicketIssuer(user);
 
   return (
     <div className="space-y-6">
@@ -110,6 +111,7 @@ async function TicketsContent({ searchParams }: TicketsContentProps) {
         currentSearch={search}
         currentUserGroupType={userGroupType}
         userGroups={userGroups}
+        showUserGroupFilter={responder}
       />
 
       {/* Error state */}

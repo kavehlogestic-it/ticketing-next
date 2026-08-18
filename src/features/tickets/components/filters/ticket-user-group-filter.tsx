@@ -1,6 +1,6 @@
 "use client";
 
-import { Users } from "lucide-react";
+import { ChevronDown, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { AVAILABLE_USER_GROUP_TYPES } from "@/constants/user-groups";
@@ -40,14 +40,14 @@ export function TicketUserGroupFilter({
 
   return (
     <div className="relative inline-flex items-center min-w-[180px] sm:min-w-[220px]">
-      <div className="pointer-events-none absolute start-3 flex items-center text-muted-foreground">
+      <div className="pointer-events-none absolute start-3.5 flex items-center text-muted-foreground">
         <Users className="h-4 w-4" />
       </div>
       <select
         value={currentUserGroupType}
         onChange={(e) => onUserGroupChange(e.target.value || undefined)}
         aria-label={t("userGroupFilter")}
-        className="h-10 w-full appearance-none rounded-lg border border-border bg-background pe-8 ps-9 text-xs font-medium text-foreground transition-colors hover:border-primary/50 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary shadow-2xs"
+        className="h-10 w-full appearance-none rounded-xl border border-border bg-background ps-10 pe-10 text-xs font-medium text-foreground transition-colors hover:border-primary/50 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary shadow-2xs"
       >
         <option value="">{t("allUserGroups")}</option>
         {options.map((opt) => (
@@ -56,8 +56,8 @@ export function TicketUserGroupFilter({
           </option>
         ))}
       </select>
-      <div className="pointer-events-none absolute end-3 flex items-center text-muted-foreground text-[10px]">
-        ▼
+      <div className="pointer-events-none absolute end-3.5 flex items-center text-muted-foreground">
+        <ChevronDown className="h-4 w-4 opacity-70" />
       </div>
     </div>
   );

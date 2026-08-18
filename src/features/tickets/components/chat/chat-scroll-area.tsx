@@ -105,16 +105,16 @@ export function ChatScrollArea({
 
       {/* Floating Scroll-to-Bottom Button */}
       {showScrollBottom && (
-        <div className="absolute bottom-4 start-1/2 -translate-x-1/2 z-20 animate-in fade-in zoom-in duration-200">
+        <div className="absolute bottom-4 inset-x-0 flex justify-center pointer-events-none z-20 animate-in fade-in zoom-in duration-200">
           <Button
             type="button"
             size="sm"
             variant="secondary"
             onClick={() => scrollToBottom("smooth")}
-            className="gap-1.5 rounded-full shadow-md text-xs border border-border/80 bg-card/95 backdrop-blur-sm px-3.5 hover:bg-card"
+            className="pointer-events-auto gap-1.5 rounded-full shadow-lg text-xs font-semibold border border-border/80 bg-card/95 backdrop-blur-md px-4 py-1.5 hover:bg-muted text-foreground transition-all hover:scale-105"
           >
-            <ArrowDown className="h-3.5 w-3.5" />
-            <span>{t("conversationThread")}</span>
+            <ArrowDown className="h-3.5 w-3.5 text-primary" />
+            <span>{t("scrollToBottom")}</span>
           </Button>
         </div>
       )}

@@ -132,7 +132,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     >
       <body
         className={cn(
-          "h-screen max-h-screen overflow-hidden flex flex-col bg-background font-sans antialiased",
+          "min-h-[100dvh] h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col bg-background font-sans antialiased",
           vazirmatn.className,
         )}
         cz-shortcut-listen="true"
