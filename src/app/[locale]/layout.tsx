@@ -108,6 +108,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           "h-screen max-h-screen overflow-hidden flex flex-col bg-background font-sans antialiased",
           vazirmatn.className,
         )}
+        cz-shortcut-listen="true"
       >
         <NextIntlClientProvider messages={messages} locale={locale}>
           <AppProviders>

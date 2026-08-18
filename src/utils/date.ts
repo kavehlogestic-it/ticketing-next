@@ -9,6 +9,7 @@ export function formatDate(
 
     if (locale === "fa") {
       return new Intl.DateTimeFormat("fa-IR", {
+        timeZone: "Asia/Tehran",
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -18,6 +19,7 @@ export function formatDate(
     }
 
     return new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Tehran",
       year: "numeric",
       month: "short",
       day: "numeric",

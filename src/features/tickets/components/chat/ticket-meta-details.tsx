@@ -85,7 +85,7 @@ export function TicketMetaDetails({ ticket }: TicketMetaDetailsProps) {
             <Calendar className="h-3.5 w-3.5" />
             <span>{t("created")}</span>
           </span>
-          <span className="font-medium text-foreground text-end font-mono text-[11px]">
+          <span className="font-medium text-foreground text-end font-mono text-[11px]" suppressHydrationWarning>
             {formatDate(ticket.ticketDate, locale)}
           </span>
         </div>
@@ -96,7 +96,7 @@ export function TicketMetaDetails({ ticket }: TicketMetaDetailsProps) {
             <Clock className="h-3.5 w-3.5" />
             <span>{t("lastReply")}</span>
           </span>
-          <span className="font-medium text-foreground text-end font-mono text-[11px]">
+          <span className="font-medium text-foreground text-end font-mono text-[11px]" suppressHydrationWarning>
             {formatDate(ticket.lastReplyDateTime, locale)}
           </span>
         </div>

@@ -66,7 +66,7 @@ export function TicketCard({ ticket }: TicketCardProps) {
 
           <div className="flex items-center gap-1.5 truncate">
             <Calendar className="h-3.5 w-3.5 shrink-0" />
-            <span>{formatDate(ticket.ticketDate, locale)}</span>
+            <span suppressHydrationWarning>{formatDate(ticket.ticketDate, locale)}</span>
           </div>
 
           {ticket.ticketAttachment ? (

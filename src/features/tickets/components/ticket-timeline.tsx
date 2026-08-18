@@ -35,7 +35,7 @@ export function TicketTimeline({ ticket }: TicketTimelineProps) {
                   {tMeta("issuer")}
                 </Badge>
               </div>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground" suppressHydrationWarning>
                 {formatDate(ticket.ticketDate, locale)}
               </span>
             </div>
@@ -111,7 +111,7 @@ export function TicketTimeline({ ticket }: TicketTimelineProps) {
                           {isResponderReply ? tCommon("roles.responder") : tCommon("roles.user")}
                         </Badge>
                       </div>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground" suppressHydrationWarning>
                         {formatDate(reply.replyDate, locale)}
                       </span>
                     </div>

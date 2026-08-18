@@ -34,7 +34,7 @@ export function ChatOriginalTicket({ ticket }: ChatOriginalTicketProps) {
                 {t("initialRequest")}
               </Badge>
             </div>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground" suppressHydrationWarning>
               {formatDate(ticket.ticketDate, locale)}
             </span>
           </div>

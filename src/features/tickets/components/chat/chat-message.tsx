@@ -67,7 +67,7 @@ export function ChatMessage({ reply, currentUserAccountId }: ChatMessageProps) {
             </Badge>
           </div>
 
-          <span className="text-[11px] text-muted-foreground font-mono">
+          <span className="text-[11px] text-muted-foreground font-mono" suppressHydrationWarning>
             {formatDate(reply.replyDate, locale)}
           </span>
         </div>

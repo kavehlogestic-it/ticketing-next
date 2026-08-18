@@ -117,8 +117,8 @@ export function TicketChatThread({
   return (
     <section className="flex-1 flex flex-col min-h-0 min-w-0 bg-background/50">
       {/* Real-time Status Sub-header */}
-      <div className="flex items-center justify-between px-4 py-1.5 border-b bg-card/60 text-[11px] font-mono shrink-0">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between px-4 py-1.5 border-b bg-card/60 text-[11px] font-mono shrink-0" suppressHydrationWarning>
+        <div className="flex items-center gap-2" suppressHydrationWarning>
           {status === "connected" ? (
             <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />

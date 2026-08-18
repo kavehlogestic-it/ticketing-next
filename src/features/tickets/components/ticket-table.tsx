@@ -81,7 +81,7 @@ export function TicketTable({ tickets }: TicketTableProps) {
               <td className="px-4 py-3.5 whitespace-nowrap text-xs text-muted-foreground">
                 {ticket.userGroupTitle || "—"}
               </td>
-              <td className="px-4 py-3.5 whitespace-nowrap text-xs text-muted-foreground font-mono">
+              <td className="px-4 py-3.5 whitespace-nowrap text-xs text-muted-foreground font-mono" suppressHydrationWarning>
                 {formatDate(ticket.ticketDate, locale)}
               </td>
               <td className="px-4 py-3.5 whitespace-nowrap text-center text-xs">
