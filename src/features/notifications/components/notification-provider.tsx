@@ -4,6 +4,8 @@ import { type ReactNode, useEffect } from "react";
 
 import { GlobalSignalRListener } from "@/features/notifications/components/global-signalr-listener";
 import { NotificationToastAlert } from "@/features/notifications/components/notification-toast-alert";
+import { realtimeClient } from "@/features/notifications/services/realtime-client";
+import { soundSynthesizer } from "@/features/notifications/services/sound-synthesizer";
 import { useNotificationStore } from "@/features/notifications/stores/notification-store";
 import type { User } from "@/types/ticket";
 
@@ -23,6 +25,16 @@ export function NotificationProvider({
   useEffect(() => {
     loadFromStorage();
   }, [loadFromStorage]);
+
+  useEffect(() => {
+    if (currentUser) {
+      soundSynthesizer.unlock();
+      realtimeClient.connect();
+      return () => {
+        realtimeClient.disconnect();
+      };
+    }
+  }, [currentUser]);
 
   return (
     <>

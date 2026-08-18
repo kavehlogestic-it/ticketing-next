@@ -10,6 +10,7 @@ import {
 import { useEffect, useRef } from "react";
 
 import { API_BASE_URL, API_ENDPOINTS } from "@/constants/api-urls";
+import { soundSynthesizer } from "@/features/notifications/services/sound-synthesizer";
 import { useNotificationStore } from "@/features/notifications/stores/notification-store";
 import { getUserTicketIdsAction } from "@/features/tickets/actions/get-user-ticket-ids";
 import type { User } from "@/types/ticket";
@@ -27,6 +28,9 @@ export function GlobalSignalRListener({ currentUser, token }: GlobalSignalRListe
 
   useEffect(() => {
     if (!currentUser) return;
+
+    // Ensure audio can play
+    soundSynthesizer.unlock();
 
     let isCancelled = false;
 
@@ -46,54 +50,89 @@ export function GlobalSignalRListener({ currentUser, token }: GlobalSignalRListe
         .build();
     };
 
+    /**
+     * Helper that attempts invoking group join with both string and integer arguments
+     * to prevent ASP.NET Core SignalR JSON type mismatch errors.
+     */
+    const invokeJoinGroup = async (conn: HubConnection, targetId: string | number) => {
+      const strVal = String(targetId);
+      const numVal = Number(targetId);
+
+      // Try JoinTicketGroup with string
+      try {
+        await conn.invoke("JoinTicketGroup", strVal);
+        return true;
+      } catch {
+        // Fallback 1: JoinTicketGroup with integer
+        if (!isNaN(numVal) && numVal > 0) {
+          try {
+            await conn.invoke("JoinTicketGroup", numVal);
+            return true;
+          } catch {
+            // Fallback 2: JoinGroup with string
+            try {
+              await conn.invoke("JoinGroup", strVal);
+              return true;
+            } catch {
+              // Ignore if group join method not found
+            }
+          }
+        }
+      }
+      return false;
+    };
+
     // ---------- Group subscription ----------
     const subscribeToUserTicketGroups = async (conn: HubConnection) => {
       if (conn.state !== HubConnectionState.Connected) {
-        console.warn("[GlobalSignalR] Skipping group join — not connected (state:", conn.state, ")");
         return;
       }
 
       try {
-        // 1. Join user's individual channel (accountId)
+        // 1. Join user's personal channel (accountId)
         if (currentUser.accountId) {
-          const userGroupId = String(currentUser.accountId);
-          if (!joinedGroupsRef.current.has(userGroupId)) {
-            try {
-              await conn.invoke("JoinTicketGroup", userGroupId);
-              joinedGroupsRef.current.add(userGroupId);
-              console.log(`[GlobalSignalR] Joined user channel: ${userGroupId}`);
-            } catch (e) {
-              console.warn("[GlobalSignalR] Failed to join user channel:", userGroupId, e);
-            }
+          const userKey = `user_${currentUser.accountId}`;
+          if (!joinedGroupsRef.current.has(userKey)) {
+            await invokeJoinGroup(conn, currentUser.accountId);
+            joinedGroupsRef.current.add(userKey);
+            console.log(`[GlobalSignalR] Subscribed to user channel: ${currentUser.accountId}`);
           }
         }
 
-        // 2. Fetch all active ticket IDs for this user and join their groups
+        // 2. Join user group channel if present
+        if (currentUser.userGroupId) {
+          const groupKey = `usergroup_${currentUser.userGroupId}`;
+          if (!joinedGroupsRef.current.has(groupKey)) {
+            await invokeJoinGroup(conn, currentUser.userGroupId);
+            joinedGroupsRef.current.add(groupKey);
+          }
+        }
+
+        // 3. Fetch active ticket IDs for this user/responder and join their groups
         let ticketIds: number[] = [];
         try {
           ticketIds = await getUserTicketIdsAction();
         } catch (fetchErr) {
-          console.error("[GlobalSignalR] getUserTicketIdsAction failed:", fetchErr);
+          console.error("[GlobalSignalR] getUserTicketIdsAction error:", fetchErr);
           return;
         }
 
         let newJoins = 0;
         for (const tid of ticketIds) {
           if (isCancelled) break;
-          const groupId = String(tid);
-          if (!joinedGroupsRef.current.has(groupId)) {
-            try {
-              await conn.invoke("JoinTicketGroup", groupId);
-              joinedGroupsRef.current.add(groupId);
-              newJoins++;
-            } catch {
-              // Individual group join failures are not critical
-            }
+          const tidKey = `ticket_${tid}`;
+          if (!joinedGroupsRef.current.has(tidKey)) {
+            await invokeJoinGroup(conn, tid);
+            joinedGroupsRef.current.add(tidKey);
+            newJoins++;
           }
         }
-        console.log(
-          `[GlobalSignalR] Ticket groups: ${ticketIds.length} total, ${newJoins} newly joined, ${joinedGroupsRef.current.size} tracked`,
-        );
+
+        if (newJoins > 0 || ticketIds.length > 0) {
+          console.log(
+            `[GlobalSignalR] Active ticket rooms: ${ticketIds.length} tickets (${newJoins} newly joined)`,
+          );
+        }
       } catch (err) {
         console.warn("[GlobalSignalR] Group subscription error:", err);
       }
@@ -103,20 +142,35 @@ export function GlobalSignalRListener({ currentUser, token }: GlobalSignalRListe
     const registerGlobalHandlers = (conn: HubConnection) => {
       // 1. Listen for new replies across tickets
       const handleReply = (evtName: string, raw: unknown) => {
-        console.log(`[GlobalSignalR] Live reply received via '${evtName}':`, raw);
-        if (!raw || typeof raw !== "object" || Array.isArray(raw)) return;
+        console.log(`[GlobalSignalR] 🔔 Live reply received via '${evtName}':`, raw);
+        if (!raw) return;
 
-        const data = raw as Record<string, unknown>;
-        const senderId = Number(data.accountId ?? data.AccountId ?? data.userId ?? data.UserId ?? 0);
+        // If array of replies is received, process the latest item
+        let data: Record<string, unknown>;
+        if (Array.isArray(raw)) {
+          if (raw.length === 0) return;
+          data = (raw[raw.length - 1] ?? {}) as Record<string, unknown>;
+        } else if (typeof raw === "object") {
+          data = raw as Record<string, unknown>;
+        } else {
+          return;
+        }
+
+        const senderId = Number(
+          data.accountId ?? data.AccountId ?? data.userId ?? data.UserId ?? data.senderId ?? data.SenderId ?? 0,
+        );
         const ticketId = Number(data.ticketId ?? data.TicketId ?? 0);
-        const text = String(data.text ?? data.Text ?? data.message ?? data.Message ?? "\u067e\u06cc\u0627\u0645 \u062c\u062f\u06cc\u062f \u062f\u0631\u06cc\u0627\u0641\u062a \u0634\u062f");
+        const text = String(
+          data.text ?? data.Text ?? data.message ?? data.Message ?? data.content ?? data.Content ?? "پیام جدید دریافت شد",
+        );
         const senderName = String(
           data.accountFullName ??
             data.AccountFullName ??
             data.senderName ??
             data.SenderName ??
             data.userName ??
-            "\u067e\u0634\u062a\u06cc\u0628\u0627\u0646\u06cc",
+            data.UserName ??
+            "پشتیبانی",
         );
 
         // Don't notify if the current user sent the reply
@@ -126,7 +180,7 @@ export function GlobalSignalRListener({ currentUser, token }: GlobalSignalRListe
 
         addNotification({
           type: "ticket.reply.created",
-          title: ticketId > 0 ? `\u067e\u0627\u0633\u062e \u062c\u062f\u06cc\u062f \u062f\u0631 \u062a\u06cc\u06a9\u062a #${ticketId}` : "\u067e\u0627\u0633\u062e \u062c\u062f\u06cc\u062f \u0628\u0647 \u062a\u06cc\u06a9\u062a",
+          title: ticketId > 0 ? `پاسخ جدید در تیکت #${ticketId}` : "پاسخ جدید به تیکت",
           message: text,
           ticketId: ticketId > 0 ? ticketId : undefined,
           actorId: senderId,
@@ -136,25 +190,29 @@ export function GlobalSignalRListener({ currentUser, token }: GlobalSignalRListe
 
       // 2. Listen for new tickets created
       const handleTicketCreated = (evtName: string, raw: unknown) => {
-        console.log(`[GlobalSignalR] Ticket created event via '${evtName}':`, raw);
+        console.log(`[GlobalSignalR] 🎫 Ticket created event via '${evtName}':`, raw);
         if (!raw || typeof raw !== "object") return;
         const data = raw as Record<string, unknown>;
         const ticketId = Number(data.ticketId ?? data.TicketId ?? data.id ?? data.Id ?? 0);
-        const subject = String(data.ticketSubject ?? data.TicketSubject ?? data.subject ?? "\u062a\u06cc\u06a9\u062a \u062c\u062f\u06cc\u062f \u062f\u0631 \u0633\u0627\u0645\u0627\u0646\u0647 \u0627\u06cc\u062c\u0627\u062f \u0634\u062f");
-        const creator = String(data.accountFullName ?? data.AccountFullName ?? data.creator ?? "\u06a9\u0627\u0631\u0628\u0631");
+        const subject = String(
+          data.ticketSubject ?? data.TicketSubject ?? data.subject ?? data.Subject ?? "تیکت جدید در سامانه ایجاد شد",
+        );
+        const creator = String(
+          data.accountFullName ?? data.AccountFullName ?? data.creator ?? data.Creator ?? "کاربر",
+        );
 
         // Automatically join this newly created ticket group
         if (ticketId > 0 && conn.state === HubConnectionState.Connected) {
-          const groupId = String(ticketId);
-          if (!joinedGroupsRef.current.has(groupId)) {
-            conn.invoke("JoinTicketGroup", groupId).catch(() => {});
-            joinedGroupsRef.current.add(groupId);
+          const tidKey = `ticket_${ticketId}`;
+          if (!joinedGroupsRef.current.has(tidKey)) {
+            invokeJoinGroup(conn, ticketId).catch(() => {});
+            joinedGroupsRef.current.add(tidKey);
           }
         }
 
         addNotification({
           type: "ticket.created",
-          title: ticketId > 0 ? `\u062a\u06cc\u06a9\u062a \u062c\u062f\u06cc\u062f #${ticketId}` : "\u062a\u06cc\u06a9\u062a \u062c\u062f\u06cc\u062f \u0627\u06cc\u062c\u0627\u062f \u0634\u062f",
+          title: ticketId > 0 ? `تیکت جدید #${ticketId}` : "تیکت جدید ایجاد شد",
           message: subject,
           ticketId: ticketId > 0 ? ticketId : undefined,
           actorName: creator,
@@ -163,21 +221,21 @@ export function GlobalSignalRListener({ currentUser, token }: GlobalSignalRListe
 
       // 3. Listen for status / closure changes
       const handleStatusChange = (evtName: string, raw: unknown) => {
-        console.log(`[GlobalSignalR] Ticket status event via '${evtName}':`, raw);
+        console.log(`[GlobalSignalR] 🔄 Ticket status event via '${evtName}':`, raw);
         if (!raw || typeof raw !== "object") return;
         const data = raw as Record<string, unknown>;
         const ticketId = Number(data.ticketId ?? data.TicketId ?? 0);
-        const status = String(data.status ?? data.Status ?? "\u062a\u063a\u06cc\u06cc\u0631 \u06cc\u0627\u0641\u062a");
+        const status = String(data.status ?? data.Status ?? data.ticketStatus ?? data.TicketStatus ?? "تغییر یافت");
 
         addNotification({
           type: "ticket.status.changed",
-          title: ticketId > 0 ? `\u0648\u0636\u0639\u06cc\u062a \u062a\u06cc\u06a9\u062a #${ticketId} \u062a\u063a\u06cc\u06cc\u0631 \u06a9\u0631\u062f` : "\u062a\u063a\u06cc\u06cc\u0631 \u0648\u0636\u0639\u06cc\u062a \u062a\u06cc\u06a9\u062a",
-          message: `\u0648\u0636\u0639\u06cc\u062a \u062c\u062f\u06cc\u062f: ${status}`,
+          title: ticketId > 0 ? `وضعیت تیکت #${ticketId} تغییر کرد` : "تغییر وضعیت تیکت",
+          message: `وضعیت جدید: ${status}`,
           ticketId: ticketId > 0 ? ticketId : undefined,
         });
       };
 
-      // Register event aliases — MUST match ALL aliases from signalr-ticket-hub.ts
+      // Register ALL event aliases to ensure compatibility with various SignalR hub naming conventions
       const REPLY_EVENTS = [
         "ReceiveTicketReply",
         "receiveTicketReply",
@@ -187,6 +245,10 @@ export function GlobalSignalRListener({ currentUser, token }: GlobalSignalRListe
         "newReply",
         "ReceiveMessage",
         "receiveMessage",
+        "SendTicketReply",
+        "sendTicketReply",
+        "SendMessage",
+        "sendMessage",
       ];
       for (const evt of REPLY_EVENTS) {
         conn.on(evt, (data: unknown) => handleReply(evt, data));
@@ -199,6 +261,8 @@ export function GlobalSignalRListener({ currentUser, token }: GlobalSignalRListe
         "ticketCreated",
         "NewTicket",
         "newTicket",
+        "ReceiveTicket",
+        "receiveTicket",
       ];
       for (const evt of CREATE_EVENTS) {
         conn.on(evt, (data: unknown) => handleTicketCreated(evt, data));
@@ -225,42 +289,45 @@ export function GlobalSignalRListener({ currentUser, token }: GlobalSignalRListe
 
       conn.onreconnected(() => {
         if (!isCancelled) {
-          console.log("[GlobalSignalR] Reconnected. Re-subscribing ticket groups...");
+          console.log("[GlobalSignalR] ♻️ Reconnected. Re-subscribing ticket groups...");
           joinedGroupsRef.current.clear();
           subscribeToUserTicketGroups(conn).catch(() => {});
         }
       });
 
       conn.onreconnecting((err) => {
-        console.warn("[GlobalSignalR] Reconnecting...", err?.message);
+        console.warn("[GlobalSignalR] ⚠️ Reconnecting...", err?.message);
       });
 
       conn.onclose((err) => {
         if (!isCancelled) {
-          console.warn("[GlobalSignalR] Connection closed.", err?.message);
+          console.warn("[GlobalSignalR] ❌ Connection closed.", err?.message);
         }
       });
     };
 
     const start = async () => {
-      // Attempt 1: direct URL
+      // Attempt 1: primary Hub URL
       let conn = buildConnection(primaryHubUrl);
       connectionRef.current = conn;
       setupConnection(conn);
 
       try {
         await conn.start();
-        if (isCancelled) { conn.stop().catch(() => {}); return; }
-        console.log("[GlobalSignalR] Connected to", primaryHubUrl);
+        if (isCancelled) {
+          conn.stop().catch(() => {});
+          return;
+        }
+        console.log("[GlobalSignalR] ✅ Connected to", primaryHubUrl);
         await subscribeToUserTicketGroups(conn);
-        return; // success
+        return;
       } catch (err) {
         if (isCancelled) return;
         const errStr = err instanceof Error ? err.message : String(err);
-        console.warn("[GlobalSignalR] Direct connection failed:", errStr);
+        console.warn("[GlobalSignalR] Primary connection failed:", errStr);
       }
 
-      // Attempt 2: proxy fallback /ticketHub (same-origin, avoids CORS)
+      // Attempt 2: Proxy fallback /ticketHub
       if (primaryHubUrl.startsWith("http")) {
         try {
           console.log("[GlobalSignalR] Trying proxy fallback /ticketHub...");
@@ -268,10 +335,13 @@ export function GlobalSignalRListener({ currentUser, token }: GlobalSignalRListe
           connectionRef.current = conn;
           setupConnection(conn);
           await conn.start();
-          if (isCancelled) { conn.stop().catch(() => {}); return; }
-          console.log("[GlobalSignalR] Connected via proxy /ticketHub");
+          if (isCancelled) {
+            conn.stop().catch(() => {});
+            return;
+          }
+          console.log("[GlobalSignalR] ✅ Connected via proxy /ticketHub");
           await subscribeToUserTicketGroups(conn);
-          return; // success
+          return;
         } catch (err2) {
           if (isCancelled) return;
           const errStr = err2 instanceof Error ? err2.message : String(err2);
@@ -279,18 +349,18 @@ export function GlobalSignalRListener({ currentUser, token }: GlobalSignalRListe
         }
       }
 
-      console.error("[GlobalSignalR] All connection attempts failed. Notifications will not work.");
+      console.error("[GlobalSignalR] ❌ All connection attempts failed.");
     };
 
     start();
 
-    // Periodically refresh group subscriptions to pick up newly created/assigned tickets
+    // Periodically refresh group subscriptions every 30 seconds
     refreshIntervalRef.current = setInterval(() => {
       const conn = connectionRef.current;
       if (!isCancelled && conn && conn.state === HubConnectionState.Connected) {
         subscribeToUserTicketGroups(conn).catch(() => {});
       }
-    }, 60_000);
+    }, 30_000);
 
     return () => {
       isCancelled = true;

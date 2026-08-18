@@ -48,7 +48,7 @@ export function TicketChatThread({
   }, [ticket.ticketId]);
 
   // Mark this ticket as actively viewed so the notification store
-  // suppresses duplicate toast/sound/desktop for it
+  // suppresses duplicate visual popover alerts while still playing sound
   useEffect(() => {
     setActiveTicketId(Number(ticket.ticketId));
     return () => {
@@ -70,9 +70,8 @@ export function TicketChatThread({
         });
 
         // Trigger notification for replies from other users.
-        // The store's activeTicketId suppression prevents toast/sound/desktop
-        // since the user is already viewing this chat, but it still persists
-        // the notification to the list for history.
+        // The store plays sound and records notification history without
+        // obstructing the active chat window with a toast banner.
         if (
           incomingReply.accountId !== currentUserAccountId &&
           incomingReply.accountId !== 0

@@ -138,6 +138,10 @@ export function subscribeToTicketSignalR(
       "newReply",
       "ReceiveMessage",
       "receiveMessage",
+      "SendTicketReply",
+      "sendTicketReply",
+      "SendMessage",
+      "sendMessage",
     ];
 
     for (const evt of SINGLE_EVENT_NAMES) {

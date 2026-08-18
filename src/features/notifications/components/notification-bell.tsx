@@ -19,6 +19,7 @@ import {
   getBrowserNotificationPermission,
   requestNotificationPermission,
 } from "@/features/notifications/services/browser-notification";
+import { soundSynthesizer } from "@/features/notifications/services/sound-synthesizer";
 import { useNotificationStore } from "@/features/notifications/stores/notification-store";
 import { Link } from "@/i18n/navigation";
 
@@ -65,6 +66,7 @@ export function NotificationBell() {
   };
 
   const handleTriggerTest = () => {
+    soundSynthesizer.unlock();
     addNotification({
       type: "ticket.reply.created",
       title: "تست اعلان سیستم تیکتینگ",

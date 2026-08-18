@@ -67,24 +67,29 @@ export const useNotificationStore = create<NotificationStoreState>((set, get) =>
   addNotification: (incoming) => {
     const state = get();
 
-    // Deduplicate: skip if same type+ticketId+actorId was added in the last 3 seconds.
-    // This prevents double notifications when both GlobalSignalRListener and
-    // the chat thread's per-ticket subscription fire for the same event.
+    // Deduplicate: skip if exact same type+ticketId+actorId was received in the last 1.5 seconds.
+    // This prevents duplicate sound/toast when both the global SignalR listener
+    // and the chat thread's dedicated subscription receive the same message.
     const now = Date.now();
     const isDuplicate = state.notifications.some((n) => {
       if (n.type !== incoming.type) return false;
       if (n.ticketId !== incoming.ticketId) return false;
       if (n.actorId !== incoming.actorId) return false;
       const age = now - new Date(n.createdAt).getTime();
-      return age < 3000; // 3-second window
+      return age < 1500;
     });
     if (isDuplicate) return;
+
+    const isViewingThisTicket =
+      incoming.ticketId != null &&
+      state.activeTicketId != null &&
+      incoming.ticketId === state.activeTicketId;
 
     const newNotif: AppNotification = {
       ...incoming,
       id: `notif_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       createdAt: new Date().toISOString(),
-      isRead: false,
+      isRead: isViewingThisTicket, // Automatically marked read if user is actively in the chat
     };
 
     const updatedNotifs = [newNotif, ...state.notifications].slice(0, 50); // Keep last 50
@@ -99,26 +104,19 @@ export const useNotificationStore = create<NotificationStoreState>((set, get) =>
       }
     }
 
-    // If the user is currently viewing this ticket's chat, persist the
-    // notification to the list but DON'T fire toast / sound / desktop –
-    // they're already seeing the messages live in real-time.
-    const isViewingThisTicket =
-      newNotif.ticketId != null &&
-      state.activeTicketId != null &&
-      newNotif.ticketId === state.activeTicketId;
-
     set({
       notifications: updatedNotifs,
       unreadCount,
       activeToast: isViewingThisTicket ? state.activeToast : newNotif,
     });
 
-    if (!isViewingThisTicket) {
-      // Sound alert
-      if (state.preferences.soundEnabled) {
-        soundSynthesizer.playChime().catch(() => {});
-      }
+    // 1. ALWAYS play sound when sound is enabled (both when in chat AND outside chat)
+    if (state.preferences.soundEnabled) {
+      soundSynthesizer.playChime().catch(() => {});
+    }
 
+    // 2. Extra alerts when user is NOT in the ticket chat:
+    if (!isViewingThisTicket) {
       // Desktop notification
       if (state.preferences.desktopEnabled) {
         showDesktopNotification(newNotif);
@@ -195,6 +193,9 @@ export const useNotificationStore = create<NotificationStoreState>((set, get) =>
       } catch {
         // Ignore storage write error
       }
+    }
+    if (prefs.soundEnabled) {
+      soundSynthesizer.unlock();
     }
     set({ preferences: updated });
   },
