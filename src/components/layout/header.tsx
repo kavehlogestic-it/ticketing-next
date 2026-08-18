@@ -5,6 +5,7 @@ import { LogoutButton } from "@/components/layout/logout-button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { Link } from "@/i18n/navigation";
 import { getStaticMessages } from "@/i18n/request";
 import { isResponder } from "@/lib/auth/permissions";
@@ -61,6 +62,9 @@ async function HeaderUserNav({ locale = "fa" }: HeaderProps) {
           </Link>
         </Button>
       ) : null}
+
+      {/* Notification Bell */}
+      <NotificationBell />
 
       {/* User Profile Pill */}
       <div className="flex items-center gap-2 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs">

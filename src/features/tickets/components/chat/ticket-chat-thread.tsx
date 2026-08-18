@@ -1,9 +1,10 @@
 "use client";
 
-import { AlertTriangle, Radio } from "lucide-react";
+import { AlertTriangle, Radio, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { useNotificationStore } from "@/features/notifications/stores/notification-store";
 import { ChatComposer } from "@/features/tickets/components/chat/chat-composer";
 import { ChatScrollArea } from "@/features/tickets/components/chat/chat-scroll-area";
 import {
@@ -34,6 +35,9 @@ export function TicketChatThread({
   const [status, setStatus] = useState<SignalRStatus>("connecting");
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
+  const addNotification = useNotificationStore((s) => s.addNotification);
+  const preferences = useNotificationStore((s) => s.preferences);
+  const updatePreferences = useNotificationStore((s) => s.updatePreferences);
   const serverReplies = ticket.replies || [];
 
   // Reset live state when switching tickets
@@ -54,6 +58,21 @@ export function TicketChatThread({
           }
           return [...prev, incomingReply];
         });
+
+        // Trigger notification if reply is from another party
+        if (
+          incomingReply.accountId !== currentUserAccountId &&
+          incomingReply.accountId !== 0
+        ) {
+          addNotification({
+            type: "ticket.reply.created",
+            title: `پاسخ جدید در تیکت #${ticket.ticketId}`,
+            message: incomingReply.text || "پیوست جدید ارسال شد",
+            ticketId: Number(ticket.ticketId),
+            actorId: incomingReply.accountId,
+            actorName: incomingReply.accountFullName || "پشتیبان",
+          });
+        }
       },
       token,
       (newStatus, err) => {
@@ -75,7 +94,7 @@ export function TicketChatThread({
     return () => {
       sub.disconnect();
     };
-  }, [ticket.ticketId, token]);
+  }, [ticket.ticketId, token, currentUserAccountId, addNotification]);
 
   const handleOptimisticSend = (text: string, attachmentName?: string | null) => {
     const optimisticReply: TicketReply = {
@@ -144,9 +163,31 @@ export function TicketChatThread({
           )}
         </div>
 
-        <Badge variant="outline" className="text-[10px] h-4 py-0 font-normal">
-          اتاق #{ticket.ticketId}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {/* Sound Mute / Unmute Quick Toggle */}
+          <button
+            type="button"
+            onClick={() => updatePreferences({ soundEnabled: !preferences.soundEnabled })}
+            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors flex items-center gap-1 text-[11px]"
+            title={preferences.soundEnabled ? "صدای پیام‌ها فعال است (کلیک برای قطع صدا)" : "صدای پیام‌ها قطع است (کلیک برای فعالسازی)"}
+          >
+            {preferences.soundEnabled ? (
+              <>
+                <Volume2 className="h-3.5 w-3.5 text-primary" />
+                <span className="hidden sm:inline">صدا فعال</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="hidden sm:inline">بی‌صدا</span>
+              </>
+            )}
+          </button>
+
+          <Badge variant="outline" className="text-[10px] h-4 py-0 font-normal">
+            اتاق #{ticket.ticketId}
+          </Badge>
+        </div>
       </div>
 
       {/* Scrollable message timeline powered purely by SignalR */}

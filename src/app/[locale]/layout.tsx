@@ -10,6 +10,8 @@ import { Suspense } from "react";
 import { Header } from "@/components/layout/header";
 import { getStaticMessages } from "@/i18n/request";
 import { routing } from "@/i18n/routing";
+import { getCurrentUser } from "@/lib/auth/session";
+import { getAccessToken } from "@/lib/auth/token-store";
 import { cn } from "@/lib/helpers/cn";
 import { AppProviders } from "@/providers/app-providers";
 
@@ -95,6 +97,8 @@ export default async function LocaleLayout({ children, params }: Props) {
   }
 
   const messages = getStaticMessages(locale);
+  const currentUser = await getCurrentUser();
+  const token = await getAccessToken();
 
   return (
     <html
@@ -111,7 +115,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         cz-shortcut-listen="true"
       >
         <NextIntlClientProvider messages={messages} locale={locale}>
-          <AppProviders>
+          <AppProviders currentUser={currentUser} token={token}>
             <Header locale={locale} />
             <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
               <Suspense
