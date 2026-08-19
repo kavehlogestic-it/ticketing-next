@@ -88,12 +88,12 @@ Visit [http://localhost:3000/](http://localhost:3000/) in your browser.
 
 ---
 
-## 5. Test Accounts
+## 5. User Roles
 
-| Role | Username | Password | User Group | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| **Responder / Admin** | `software` | `Software2023#` | Group 1 | Support agent with status management and all-group ticket visibility |
-| **Ticket Issuer / User** | `3161131053` | `123456` | Group 5 (واردات) | Regular user with group-isolated ticket creation and rating capabilities |
+| Role | User Group Access | Description |
+| :--- | :--- | :--- |
+| **Responder / Admin** | All Groups | Support agent with status management and organization-wide ticket visibility |
+| **Ticket Issuer / User** | Group-Isolated | Regular user with group-isolated ticket creation and rating capabilities |
 
 ---
 
