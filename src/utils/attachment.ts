@@ -39,7 +39,7 @@ export function getFileExtension(fileName: string | null | undefined): string {
 
 /**
  * Formats the full downloadable/viewable URL for an attachment from the backend API.
- * Files are served at: {API_BASE_URL}/ticket/attachments/{fileName}
+ * Files are served at: {API_BASE_URL}/ticketAttachments/{fileName}
  */
 export function getAttachmentUrl(fileName: string | null | undefined): string {
   if (!fileName) return "";
@@ -50,7 +50,7 @@ export function getAttachmentUrl(fileName: string | null | undefined): string {
   const cleanBase = API_BASE_URL.replace(/\/+$/, "");
   const cleanPath = fileName.replace(/^\/+/, "");
 
-  if (cleanPath.startsWith("ticket/attachments/")) {
+  if (cleanPath.startsWith("ticketAttachments/")) {
     return `${cleanBase}/${cleanPath}`;
   }
 
