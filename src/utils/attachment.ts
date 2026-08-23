@@ -1,5 +1,3 @@
-import { API_BASE_URL, API_ENDPOINTS } from "@/constants/api-urls";
-
 const IMAGE_EXTENSIONS = new Set([
   "jpg",
   "jpeg",
@@ -38,21 +36,31 @@ export function getFileExtension(fileName: string | null | undefined): string {
 }
 
 /**
- * Formats the full downloadable/viewable URL for an attachment from the backend API.
- * Files are served at: {API_BASE_URL}/ticketAttachments/{fileName}
+ * Formats the downloadable/viewable URL for an attachment.
+ * When client devices cannot directly access the internal backend file server
+ * (e.g. 192.168.77.30:6040), files are streamed through the Next.js server proxy:
+ * `/api/attachments/{fileName}`.
  */
 export function getAttachmentUrl(fileName: string | null | undefined): string {
   if (!fileName) return "";
-  if (fileName.startsWith("http://") || fileName.startsWith("https://") || fileName.startsWith("data:")) {
+  if (fileName.startsWith("data:") || fileName.startsWith("blob:")) {
     return fileName;
   }
 
-  const cleanBase = API_BASE_URL.replace(/\/+$/, "");
-  const cleanPath = fileName.replace(/^\/+/, "");
-
-  if (cleanPath.startsWith("ticketAttachments/")) {
-    return `${cleanBase}/${cleanPath}`;
+  let cleanPath = fileName;
+  if (cleanPath.startsWith("http://") || cleanPath.startsWith("https://")) {
+    try {
+      const parsed = new URL(cleanPath);
+      cleanPath = parsed.pathname;
+    } catch {
+      // ignore
+    }
   }
 
-  return `${cleanBase}${API_ENDPOINTS.TICKETS.ATTACHMENT_URL(cleanPath)}`;
+  cleanPath = cleanPath.replace(/^\/+/, "");
+  if (cleanPath.startsWith("ticketAttachments/")) {
+    cleanPath = cleanPath.replace(/^ticketAttachments\//, "");
+  }
+
+  return `/api/attachments/${encodeURIComponent(cleanPath)}`;
 }
