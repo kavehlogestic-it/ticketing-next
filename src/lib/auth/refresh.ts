@@ -22,7 +22,6 @@ export async function refreshAccessToken(): Promise<string | null> {
 async function doRefresh(): Promise<string | null> {
   const refreshToken = await getRefreshToken();
   if (!refreshToken) {
-    await clearTokens();
     return null;
   }
 

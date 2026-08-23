@@ -8,7 +8,16 @@ const ACCESS_TOKEN_COOKIE = "__access_token";
 const REFRESH_TOKEN_COOKIE = "__refresh_token";
 const USER_SESSION_COOKIE = "__user_session";
 
-const isProd = process.env.NODE_ENV === "production";
+/**
+ * Determine if cookies should have the Secure flag.
+ * For local network / offline intranet deployments running over plain HTTP (e.g. http://192.168.x.x:3000),
+ * setting `secure: true` causes modern browsers to drop or refuse sending cookies on subsequent HTTP requests.
+ * Therefore, we only set `secure: true` if COOKIE_SECURE is explicitly "true" or NEXT_PUBLIC_APP_URL starts with https://.
+ */
+const isSecure =
+  process.env.COOKIE_SECURE === "true" ||
+  (process.env.COOKIE_SECURE !== "false" &&
+    Boolean(process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://")));
 
 export async function getAccessToken(): Promise<string | null> {
   const store = await cookies();
@@ -41,12 +50,12 @@ export async function setTokens({
   user?: User;
 }) {
   const store = await cookies();
-  const accessTtl = Number(process.env.AUTH_ACCESS_TOKEN_TTL ?? 86400);
-  const refreshTtl = Number(process.env.AUTH_REFRESH_TOKEN_TTL ?? 2_592_000);
+  const accessTtl = Number(process.env.AUTH_ACCESS_TOKEN_TTL ?? 86400 * 30); // Default 30 days
+  const refreshTtl = Number(process.env.AUTH_REFRESH_TOKEN_TTL ?? 86400 * 60); // Default 60 days
 
   const shared = {
     httpOnly: true,
-    secure: isProd,
+    secure: isSecure,
     sameSite: "lax" as const,
     path: "/",
   };
