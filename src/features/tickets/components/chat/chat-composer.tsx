@@ -12,13 +12,21 @@ import { replyTicketAction } from "@/features/tickets/actions/reply-ticket-actio
 interface ChatComposerProps {
   ticketId: number;
   disabled?: boolean;
-  onOptimisticSend?: (text: string, attachmentName?: string | null) => void;
+  onOptimisticSend?: (text: string, attachmentName?: string | null) => number | void;
+  onSendSuccess?: (optimisticId: number) => void;
+  onSendError?: (optimisticId: number) => void;
 }
+
+// NOTE: add `fileTooLarge` (with a `{maxSize}` param) and `sendError` keys
+// to the `tickets.chat` translation namespace if they don't exist yet.
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
 
 export function ChatComposer({
   ticketId,
   disabled = false,
   onOptimisticSend,
+  onSendSuccess,
+  onSendError,
 }: ChatComposerProps) {
   const t = useTranslations("tickets.chat");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,6 +37,14 @@ export function ChatComposer({
   const [actionError, setActionError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  const resetFileInput = () => {
+    setSelectedFile(null);
+    setFileError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFileError(null);
     const file = e.target.files?.[0];
@@ -37,9 +53,8 @@ export function ChatComposer({
       return;
     }
 
-    const MAX_SIZE = 15 * 1024 * 1024; // 15MB
-    if (file.size > MAX_SIZE) {
-      setFileError("حجم فایل نباید بیش از ۱۵ مگابایت باشد");
+    if (file.size > MAX_FILE_SIZE) {
+      setFileError(t("fileTooLarge", { maxSize: "15MB" }));
       setSelectedFile(null);
       e.target.value = "";
       return;
@@ -48,31 +63,25 @@ export function ChatComposer({
     setSelectedFile(file);
   };
 
-  const removeSelectedFile = () => {
-    setSelectedFile(null);
-    setFileError(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  // Shared by both the form's submit event and the Ctrl/Cmd+Enter shortcut,
+  // so we never have to pass a mismatched event type into it.
+  const submitReply = () => {
     const trimmed = text.trim();
     if (!trimmed || isPending) return;
 
     setActionError(null);
 
-    // Optimistically render the message in the chat immediately!
     const fileToSend = selectedFile;
+    let optId: number | undefined;
     if (onOptimisticSend) {
-      onOptimisticSend(trimmed, fileToSend ? fileToSend.name : null);
+      const result = onOptimisticSend(trimmed, fileToSend ? fileToSend.name : null);
+      if (typeof result === "number") optId = result;
     }
 
-    // Reset input fields right away so user can type next message
+    // Reset input fields right away so the user can start typing the next message.
     setText("");
-    setSelectedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    resetFileInput();
+    textareaRef.current?.focus();
 
     startTransition(async () => {
       const formData = new FormData();
@@ -82,11 +91,24 @@ export function ChatComposer({
       }
 
       const res = await replyTicketAction(ticketId, { success: false }, formData);
-      console.log("replyTicketAction result:", res);
+
       if (!res.success) {
-        setActionError(res.error || "خطا در ارسال پاسخ");
+        setActionError(res.error || t("sendError"));
+        // Restore what the user typed/attached so a failed send doesn't lose their message.
+        setText(trimmed);
+        setSelectedFile(fileToSend ?? null);
+        if (typeof optId === "number") {
+          onSendError?.(optId);
+        }
+      } else if (typeof optId === "number") {
+        onSendSuccess?.(optId);
       }
     });
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    submitReply();
   };
 
   if (disabled) {
@@ -113,7 +135,7 @@ export function ChatComposer({
             </span>
             <button
               type="button"
-              onClick={removeSelectedFile}
+              onClick={resetFileInput}
               className="text-muted-foreground hover:text-destructive transition-colors p-0.5 rounded-sm"
               title={t("removeFile")}
             >
@@ -169,7 +191,7 @@ export function ChatComposer({
                 // Submit on Ctrl+Enter or Cmd+Enter
                 if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
                   e.preventDefault();
-                  handleSubmit(e);
+                  submitReply();
                 }
               }}
             />

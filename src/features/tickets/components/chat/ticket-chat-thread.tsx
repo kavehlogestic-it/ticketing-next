@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, Radio, Volume2, VolumeX } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { useNotificationStore } from "@/features/notifications/stores/notification-store";
@@ -22,18 +22,46 @@ interface TicketChatThreadProps {
   token?: string | null;
 }
 
+// Window used to match a confirmed reply back to the optimistic bubble it echoes.
+const OPTIMISTIC_MATCH_WINDOW_MS = 120_000;
+// Safety-net cleanup for optimistic replies that never get confirmed
+// (e.g. success fired but SignalR/revalidation never delivered the echo).
+const OPTIMISTIC_STALE_MS = 2 * 60_000;
+
+function normalizeText(text?: string | null) {
+  return (text ?? "").trim().replace(/\r\n/g, "\n");
+}
+
+/** True if `base` (a confirmed reply) looks like the server-side echo of `optimistic`. */
+function isMatchingReply(base: TicketReply, optimistic: TicketReply): boolean {
+  if (base.replyId === optimistic.replyId) return true;
+  if (base.accountId !== optimistic.accountId) return false;
+  if (normalizeText(base.text) !== normalizeText(optimistic.text)) return false;
+
+  const baseTime = new Date(base.replyDate).getTime();
+  const optTime = new Date(optimistic.replyDate).getTime();
+  if (Number.isNaN(baseTime) || Number.isNaN(optTime)) {
+    // Can't compare timestamps reliably — fall back to account + text match.
+    return true;
+  }
+  return Math.abs(baseTime - optTime) < OPTIMISTIC_MATCH_WINDOW_MS;
+}
+
 export function TicketChatThread({
   ticket,
   currentUserAccountId,
   currentUserFullName = "شما",
-  currentUserRoleId = 2,
+  currentUserRoleId = 2, // TODO: replace with a named role constant/enum from the app
   canReply,
   token,
 }: TicketChatThreadProps) {
   const [optimisticReplies, setOptimisticReplies] = useState<TicketReply[]>([]);
   const [liveReplies, setLiveReplies] = useState<TicketReply[]>([]);
   const [status, setStatus] = useState<SignalRStatus>("connecting");
-  const [errorDetail, setErrorDetail] = useState<string | null>(null);
+
+  // Negative, ever-decreasing counter so optimistic IDs can never collide
+  // with real (positive) server-issued reply IDs — unlike Date.now(), which could.
+  const optimisticIdRef = useRef(0);
 
   const setActiveTicketId = useNotificationStore((s) => s.setActiveTicketId);
   const addNotification = useNotificationStore((s) => s.addNotification);
@@ -89,7 +117,11 @@ export function TicketChatThread({
       token,
       (newStatus, err) => {
         setStatus(newStatus);
-        setErrorDetail(err || null);
+        if (err) {
+          // Keep the raw detail in the console for developers; never render
+          // internal exception/connection text directly to end users.
+          console.error("SignalR ticket hub error:", err);
+        }
       },
       (repliesList) => {
         // Hydrate full replies list from SignalR Hub
@@ -109,8 +141,10 @@ export function TicketChatThread({
   }, [ticket.ticketId, token, currentUserAccountId, addNotification]);
 
   const handleOptimisticSend = (text: string, attachmentName?: string | null) => {
+    optimisticIdRef.current -= 1;
+    const id = optimisticIdRef.current;
     const optimisticReply: TicketReply = {
-      replyId: Date.now(),
+      replyId: id,
       text,
       accountId: currentUserAccountId,
       accountFullName: currentUserFullName,
@@ -120,36 +154,65 @@ export function TicketChatThread({
     };
 
     setOptimisticReplies((prev) => [...prev, optimisticReply]);
+    return id;
   };
 
-  // Base initial server replies
-  const baseReplies = [...serverReplies];
+  // Deliberately a no-op: removing the optimistic reply as soon as the POST
+  // resolves can happen before the confirmed reply has reached us via
+  // SignalR (or a ticket refetch), which makes the message flicker/disappear
+  // for a moment. The cleanup effect below removes it only once a matching
+  // confirmed reply is actually present.
+  const handleSendSuccess = (_id: number) => { };
 
-  // Merge live replies arriving exclusively through SignalR
-  for (const live of liveReplies) {
-    if (!baseReplies.some((sr) => sr.replyId === live.replyId)) {
-      baseReplies.push(live);
+  const handleSendError = (id: number) => {
+    // The send genuinely failed — nothing confirmed will ever arrive for it,
+    // so it's correct to remove it immediately.
+    setOptimisticReplies((prev) => prev.filter((r) => r.replyId !== id));
+  };
+
+  // Server + live replies, deduped by replyId.
+  const baseReplies = useMemo(() => {
+    const merged = [...serverReplies];
+    for (const live of liveReplies) {
+      if (!merged.some((sr) => sr.replyId === live.replyId)) {
+        merged.push(live);
+      }
     }
-  }
+    return merged;
+  }, [serverReplies, liveReplies]);
 
-  // Merge pending optimistic replies that haven't been echoed back yet
-  const pendingOptimistic = optimisticReplies.filter(
-    (opt) =>
-      !baseReplies.some(
-        (br) =>
-          br.replyId === opt.replyId ||
-          (br.text === opt.text &&
-            Math.abs(new Date(br.replyDate).getTime() - new Date(opt.replyDate).getTime()) < 120000),
-      ),
+  // Once a confirmed reply matching an optimistic one shows up, drop the
+  // optimistic entry from state. Also garbage-collect anything stale in case
+  // a match never arrives, so the list can't grow unbounded.
+  useEffect(() => {
+    setOptimisticReplies((prev) => {
+      const now = Date.now();
+      const next = prev.filter((opt) => {
+        const confirmed = baseReplies.some((br) => isMatchingReply(br, opt));
+        if (confirmed) return false;
+        const age = now - new Date(opt.replyDate).getTime();
+        if (!Number.isNaN(age) && age > OPTIMISTIC_STALE_MS) return false;
+        return true;
+      });
+      return next.length === prev.length ? prev : next;
+    });
+  }, [baseReplies]);
+
+  const pendingOptimistic = useMemo(
+    () => optimisticReplies.filter((opt) => !baseReplies.some((br) => isMatchingReply(br, opt))),
+    [optimisticReplies, baseReplies],
   );
 
-  const combinedReplies = [...baseReplies, ...pendingOptimistic];
+  const combinedReplies = useMemo(
+    () => [...baseReplies, ...pendingOptimistic],
+    [baseReplies, pendingOptimistic],
+  );
 
   return (
     <section className="flex-1 flex flex-col min-h-0 min-w-0 bg-background/50">
       {/* Real-time Status Sub-header */}
-      <div className="flex items-center justify-between px-4 py-1.5 border-b bg-card/60 text-[11px] font-mono shrink-0" suppressHydrationWarning>
-        <div className="flex items-center gap-2" suppressHydrationWarning>
+      <div className="flex items-center justify-between px-4 py-1.5 border-b bg-card/60 text-[11px] font-mono shrink-0">
+        <div className="flex items-center gap-2">
           {status === "connected" ? (
             <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -168,9 +231,7 @@ export function TicketChatThread({
           ) : (
             <span className="flex items-center gap-1.5 text-destructive">
               <AlertTriangle className="h-3 w-3" />
-              <span className="truncate max-w-[300px]">
-                {errorDetail || "ارتباط زنده قطع است"}
-              </span>
+              <span className="truncate max-w-[300px]">ارتباط زنده قطع است</span>
             </span>
           )}
         </div>
@@ -182,6 +243,7 @@ export function TicketChatThread({
             onClick={() => updatePreferences({ soundEnabled: !preferences.soundEnabled })}
             className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors flex items-center gap-1 text-[11px]"
             title={preferences.soundEnabled ? "صدای پیام‌ها فعال است (کلیک برای قطع صدا)" : "صدای پیام‌ها قطع است (کلیک برای فعالسازی)"}
+            aria-label={preferences.soundEnabled ? "قطع صدای اعلان‌ها" : "فعال‌سازی صدای اعلان‌ها"}
           >
             {preferences.soundEnabled ? (
               <>
@@ -214,6 +276,8 @@ export function TicketChatThread({
         ticketId={ticket.ticketId}
         disabled={!canReply}
         onOptimisticSend={handleOptimisticSend}
+        onSendSuccess={handleSendSuccess}
+        onSendError={handleSendError}
       />
     </section>
   );
