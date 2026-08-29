@@ -36,15 +36,21 @@ function normalizeText(text?: string | null) {
 function isMatchingReply(base: TicketReply, optimistic: TicketReply): boolean {
   if (base.replyId === optimistic.replyId) return true;
   if (base.accountId !== optimistic.accountId) return false;
-  if (normalizeText(base.text) !== normalizeText(optimistic.text)) return false;
+  
+  // Aggressively normalize text to avoid newline/whitespace mismatches
+  const normBase = (base.text ?? "").trim().replace(/\s+/g, "");
+  const normOpt = (optimistic.text ?? "").trim().replace(/\s+/g, "");
+  if (normBase !== normOpt) return false;
 
-  const baseTime = new Date(base.replyDate).getTime();
+  // Avoid parsing base.replyDate since the server might return it without a timezone
+  // offset, causing huge mismatches when parsed locally. We just check if the 
+  // optimistic reply was created recently.
   const optTime = new Date(optimistic.replyDate).getTime();
-  if (Number.isNaN(baseTime) || Number.isNaN(optTime)) {
-    // Can't compare timestamps reliably — fall back to account + text match.
+  if (!Number.isNaN(optTime) && Date.now() - optTime < OPTIMISTIC_MATCH_WINDOW_MS) {
     return true;
   }
-  return Math.abs(baseTime - optTime) < OPTIMISTIC_MATCH_WINDOW_MS;
+  
+  return false;
 }
 
 export function TicketChatThread({
@@ -157,12 +163,17 @@ export function TicketChatThread({
     return id;
   };
 
-  // Deliberately a no-op: removing the optimistic reply as soon as the POST
-  // resolves can happen before the confirmed reply has reached us via
-  // SignalR (or a ticket refetch), which makes the message flicker/disappear
-  // for a moment. The cleanup effect below removes it only once a matching
-  // confirmed reply is actually present.
-  const handleSendSuccess = (_id: number) => { };
+  // When the POST resolves, we update the optimistic reply's ID to match the real one.
+  // This guarantees `isMatchingReply` will instantly filter it out once the real
+  // message is added to `baseReplies` (via SignalR or revalidate), without causing
+  // the message to flicker/disappear prematurely.
+  const handleSendSuccess = (id: number, serverReplyId?: number) => {
+    if (serverReplyId) {
+      setOptimisticReplies((prev) =>
+        prev.map((r) => (r.replyId === id ? { ...r, replyId: serverReplyId } : r))
+      );
+    }
+  };
 
   const handleSendError = (id: number) => {
     // The send genuinely failed — nothing confirmed will ever arrive for it,

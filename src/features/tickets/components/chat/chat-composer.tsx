@@ -13,7 +13,7 @@ interface ChatComposerProps {
   ticketId: number;
   disabled?: boolean;
   onOptimisticSend?: (text: string, attachmentName?: string | null) => number | void;
-  onSendSuccess?: (optimisticId: number) => void;
+  onSendSuccess?: (optimisticId: number, serverReplyId?: number) => void;
   onSendError?: (optimisticId: number) => void;
 }
 
@@ -101,7 +101,7 @@ export function ChatComposer({
           onSendError?.(optId);
         }
       } else if (typeof optId === "number") {
-        onSendSuccess?.(optId);
+        onSendSuccess?.(optId, res.replyId);
       }
     });
   };
