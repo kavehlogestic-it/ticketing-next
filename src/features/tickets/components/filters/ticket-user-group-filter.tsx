@@ -45,7 +45,7 @@ export function TicketUserGroupFilter({
       </div>
       <select
         value={currentUserGroupType}
-        onChange={(e) => onUserGroupChange(e.target.value || undefined)}
+        onChange={(e) => onUserGroupChange(e.target.value)}
         aria-label={t("userGroupFilter")}
         className="h-10 w-full appearance-none rounded-xl border border-border bg-background ps-10 pe-10 text-xs font-medium text-foreground transition-colors hover:border-primary/50 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary shadow-2xs"
       >

@@ -50,7 +50,7 @@ async function TicketsContent({ searchParams }: TicketsContentProps) {
   let fetchError: string | null = null;
 
   try {
-    const [ticketsRes, groupsRes] = await Promise.all([
+    const [ticketsResult, groupsResult] = await Promise.allSettled([
       getCachedTickets(
         {
           page,
@@ -64,8 +64,18 @@ async function TicketsContent({ searchParams }: TicketsContentProps) {
       responder ? getCachedUserGroups(token) : Promise.resolve([]),
     ]);
 
-    ticketsData = ticketsRes;
-    userGroups = groupsRes;
+    if (ticketsResult.status === "fulfilled") {
+      ticketsData = ticketsResult.value;
+    } else {
+      fetchError =
+        ticketsResult.reason instanceof Error
+          ? ticketsResult.reason.message
+          : "خطا در دریافت لیست تیکت‌ها";
+    }
+
+    if (groupsResult.status === "fulfilled") {
+      userGroups = groupsResult.value;
+    }
   } catch (err) {
     fetchError = err instanceof Error ? err.message : "خطا در دریافت لیست تیکت‌ها";
   }
