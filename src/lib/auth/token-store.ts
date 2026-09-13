@@ -50,8 +50,8 @@ export async function setTokens({
   user?: User;
 }) {
   const store = await cookies();
-  const accessTtl = Number(process.env.AUTH_ACCESS_TOKEN_TTL ?? 86400 * 30); // Default 30 days
-  const refreshTtl = Number(process.env.AUTH_REFRESH_TOKEN_TTL ?? 86400 * 60); // Default 60 days
+  const accessTtl = Number(process.env.AUTH_ACCESS_TOKEN_TTL ?? 480 * 60); // 480 minutes
+  const refreshTtl = Number(process.env.AUTH_REFRESH_TOKEN_TTL ?? 7 * 86400); // 7 days
 
   const shared = {
     httpOnly: true,
