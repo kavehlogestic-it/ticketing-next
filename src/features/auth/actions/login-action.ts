@@ -35,6 +35,7 @@ export async function loginAction(
       };
     }
   } catch (error) {
+    console.log(error)
     const message =
       error instanceof ApiError
         ? error.message
