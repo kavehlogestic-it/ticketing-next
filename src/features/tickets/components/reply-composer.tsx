@@ -25,8 +25,9 @@ export function ReplyComposer({ ticketId, disabled = false }: ReplyComposerProps
 
   const boundAction = replyTicketAction.bind(null, ticketId);
   const [state, formAction, isPending] = useActionState(boundAction, initialState);
+  const isSubmittingRef = useRef(false);
 
-  // Clear input on success
+  // Clear input on success and release submit lock
   useEffect(() => {
     if (state.success) {
       formRef.current?.reset();
@@ -34,7 +35,18 @@ export function ReplyComposer({ ticketId, disabled = false }: ReplyComposerProps
       setFileError(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
-  }, [state.success]);
+    isSubmittingRef.current = false;
+  }, [state.success, state.error]);
+
+  const isLocked = isPending || isSubmittingRef.current;
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    if (isSubmittingRef.current || isPending) {
+      e.preventDefault();
+      return;
+    }
+    isSubmittingRef.current = true;
+  };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFileError(null);
@@ -78,7 +90,7 @@ export function ReplyComposer({ ticketId, disabled = false }: ReplyComposerProps
         {t("sendReply")}
       </h3>
 
-      <form ref={formRef} action={formAction} className="space-y-4">
+      <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Textarea
             name="Text"
@@ -86,7 +98,7 @@ export function ReplyComposer({ ticketId, disabled = false }: ReplyComposerProps
             required
             placeholder={t("replyPlaceholder")}
             className="resize-y"
-            disabled={isPending}
+            disabled={isLocked}
           />
         </div>
 
@@ -100,7 +112,7 @@ export function ReplyComposer({ ticketId, disabled = false }: ReplyComposerProps
               type="file"
               onChange={handleFileChange}
               className="hidden"
-              disabled={isPending}
+              disabled={isLocked}
             />
 
             <Button
@@ -108,7 +120,7 @@ export function ReplyComposer({ ticketId, disabled = false }: ReplyComposerProps
               variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isPending}
+              disabled={isLocked}
               className="gap-2 text-xs"
             >
               <Paperclip className="h-3.5 w-3.5" />
@@ -159,8 +171,8 @@ export function ReplyComposer({ ticketId, disabled = false }: ReplyComposerProps
 
         {/* Submit button */}
         <div className="flex justify-end">
-          <Button type="submit" disabled={isPending} className="gap-2 shadow-xs">
-            {isPending ? (
+          <Button type="submit" disabled={isLocked} className="gap-2 shadow-xs">
+            {isLocked ? (
               <>
                 <Spinner className="h-4 w-4" />
                 <span>{t("sendingReply")}</span>

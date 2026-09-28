@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertCircle, CheckCircle2, Send } from "lucide-react";
-import { useActionState, useEffect } from "react";
+import { type FormEvent, useActionState, useEffect, useRef } from "react";
 
 import { Spinner } from "@/components/common/spinner";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ const initialState: ActionResult = { success: false };
 export function TicketCreateForm({ ticketGroups }: TicketCreateFormProps) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(createTicketAction, initialState);
+  const isSubmittingRef = useRef(false);
 
   useEffect(() => {
     if (state.success) {
@@ -31,13 +32,25 @@ export function TicketCreateForm({ ticketGroups }: TicketCreateFormProps) {
         router.push("/tickets");
       }, 1000);
       return () => clearTimeout(timer);
+    } else {
+      isSubmittingRef.current = false;
     }
-  }, [state.success, router]);
+  }, [state.success, state.error, router]);
+
+  const isLocked = isPending || state.success;
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    if (isSubmittingRef.current || isLocked) {
+      e.preventDefault();
+      return;
+    }
+    isSubmittingRef.current = true;
+  };
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} onSubmit={handleSubmit} className="space-y-6">
       {/* Category Group Selector */}
-      <TicketGroupSelect ticketGroups={ticketGroups} disabled={isPending} />
+      <TicketGroupSelect ticketGroups={ticketGroups} disabled={isLocked} />
 
       {/* Subject */}
       <div className="space-y-2">
@@ -50,7 +63,7 @@ export function TicketCreateForm({ ticketGroups }: TicketCreateFormProps) {
           type="text"
           required
           placeholder="عنوان خلاصه مشکل یا درخواست..."
-          disabled={isPending}
+          disabled={isLocked}
         />
       </div>
 
@@ -66,12 +79,12 @@ export function TicketCreateForm({ ticketGroups }: TicketCreateFormProps) {
           required
           placeholder="شرح دقیق مشکل، مراحل بروز خطا، و توضیحات تکمیلی..."
           className="resize-y"
-          disabled={isPending}
+          disabled={isLocked}
         />
       </div>
 
       {/* Attachment Upload */}
-      <TicketFilePicker disabled={isPending} />
+      <TicketFilePicker disabled={isLocked} />
 
       {/* State Feedback */}
       {state.error ? (
@@ -94,16 +107,16 @@ export function TicketCreateForm({ ticketGroups }: TicketCreateFormProps) {
           type="button"
           variant="outline"
           onClick={() => router.back()}
-          disabled={isPending}
+          disabled={isLocked}
         >
           انصراف
         </Button>
 
-        <Button type="submit" disabled={isPending} className="gap-2 shadow-xs">
-          {isPending ? (
+        <Button type="submit" disabled={isLocked} className="gap-2 shadow-xs">
+          {isLocked ? (
             <>
               <Spinner className="h-4 w-4" />
-              <span>در حال ثبت تیکت...</span>
+              <span>{state.success ? "تیکت ثبت شد..." : "در حال ثبت تیکت..."}</span>
             </>
           ) : (
             <>

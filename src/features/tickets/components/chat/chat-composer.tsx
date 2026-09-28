@@ -36,6 +36,7 @@ export function ChatComposer({
   const [text, setText] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const isSendingRef = useRef(false);
 
   const resetFileInput = () => {
     setSelectedFile(null);
@@ -66,9 +67,11 @@ export function ChatComposer({
   // Shared by both the form's submit event and the Ctrl/Cmd+Enter shortcut,
   // so we never have to pass a mismatched event type into it.
   const submitReply = () => {
+    if (isSendingRef.current || isPending) return;
     const trimmed = text.trim();
-    if (!trimmed || isPending) return;
+    if (!trimmed) return;
 
+    isSendingRef.current = true;
     setActionError(null);
 
     const fileToSend = selectedFile;
@@ -84,24 +87,28 @@ export function ChatComposer({
     textareaRef.current?.focus();
 
     startTransition(async () => {
-      const formData = new FormData();
-      formData.append("Text", trimmed);
-      if (fileToSend && fileToSend.size > 0) {
-        formData.append("attachment", fileToSend);
-      }
-
-      const res = await replyTicketAction(ticketId, { success: false }, formData);
-
-      if (!res.success) {
-        setActionError(res.error || t("sendError"));
-        // Restore what the user typed/attached so a failed send doesn't lose their message.
-        setText(trimmed);
-        setSelectedFile(fileToSend ?? null);
-        if (typeof optId === "number") {
-          onSendError?.(optId);
+      try {
+        const formData = new FormData();
+        formData.append("Text", trimmed);
+        if (fileToSend && fileToSend.size > 0) {
+          formData.append("attachment", fileToSend);
         }
-      } else if (typeof optId === "number") {
-        onSendSuccess?.(optId, res.replyId);
+
+        const res = await replyTicketAction(ticketId, { success: false }, formData);
+
+        if (!res.success) {
+          setActionError(res.error || t("sendError"));
+          // Restore what the user typed/attached so a failed send doesn't lose their message.
+          setText(trimmed);
+          setSelectedFile(fileToSend ?? null);
+          if (typeof optId === "number") {
+            onSendError?.(optId);
+          }
+        } else if (typeof optId === "number") {
+          onSendSuccess?.(optId, res.replyId);
+        }
+      } finally {
+        isSendingRef.current = false;
       }
     });
   };
@@ -201,11 +208,11 @@ export function ChatComposer({
           <Button
             type="submit"
             size="icon"
-            disabled={isPending || !text.trim()}
+            disabled={isPending || isSendingRef.current || !text.trim()}
             className="h-10 w-10 shrink-0 rounded-xl shadow-xs"
             title={t("sendReply")}
           >
-            {isPending ? <Spinner className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+            {isPending || isSendingRef.current ? <Spinner className="h-4 w-4" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
 
