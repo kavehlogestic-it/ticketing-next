@@ -2,12 +2,13 @@
 
 import { AlertCircle, CheckCircle2, Paperclip, Send, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { type ChangeEvent, useActionState, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, type FormEvent, useActionState, useEffect, useRef, useState } from "react";
 
 import { Spinner } from "@/components/common/spinner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { type ActionResult, replyTicketAction } from "@/features/tickets/actions/reply-ticket-action";
+import { formatFileSize, MAX_ATTACHMENT_SIZE, MAX_ATTACHMENT_SIZE_MB } from "@/utils/attachment";
 
 interface ReplyComposerProps {
   ticketId: number;
@@ -40,8 +41,8 @@ export function ReplyComposer({ ticketId, disabled = false }: ReplyComposerProps
 
   const isLocked = isPending || isSubmittingRef.current;
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    if (isSubmittingRef.current || isPending) {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    if (isSubmittingRef.current || isPending || Boolean(fileError)) {
       e.preventDefault();
       return;
     }
@@ -56,10 +57,13 @@ export function ReplyComposer({ ticketId, disabled = false }: ReplyComposerProps
       return;
     }
 
-    // 15MB max file size check
-    const MAX_SIZE = 15 * 1024 * 1024;
-    if (file.size > MAX_SIZE) {
-      setFileError("حجم فایل نباید بیش از ۱۵ مگابایت باشد");
+    if (file.size > MAX_ATTACHMENT_SIZE) {
+      const formattedSize = formatFileSize(file.size);
+      const errorMsg =
+        t("fileSizeErrorDetailed", { size: formattedSize }) ||
+        t("fileTooLarge", { maxSize: "5MB" }) ||
+        `حجم فایل انتخابی (${formattedSize}) بیش از حد مجاز (${MAX_ATTACHMENT_SIZE_MB} مگابایت) است.`;
+      setFileError(errorMsg);
       setSelectedFile(null);
       e.target.value = "";
       return;
@@ -125,7 +129,7 @@ export function ReplyComposer({ ticketId, disabled = false }: ReplyComposerProps
             >
               <Paperclip className="h-3.5 w-3.5" />
               <span>
-                {selectedFile ? t("changeFile") : t("attachFile")}
+                {selectedFile ? t("changeFile") : t("attachFile")} (حداکثر ۵ مگابایت)
               </span>
             </Button>
 
@@ -133,12 +137,13 @@ export function ReplyComposer({ ticketId, disabled = false }: ReplyComposerProps
               <div className="inline-flex items-center gap-2 rounded-md border border-border bg-muted/50 px-2.5 py-1 text-xs font-mono text-foreground">
                 <span className="truncate max-w-[200px]">{selectedFile.name}</span>
                 <span className="text-muted-foreground text-[11px]">
-                  ({(selectedFile.size / 1024).toFixed(1)} KB)
+                  ({formatFileSize(selectedFile.size)})
                 </span>
                 <button
                   type="button"
                   onClick={removeSelectedFile}
                   className="text-muted-foreground hover:text-destructive transition-colors"
+                  title="حذف فایل"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -147,10 +152,10 @@ export function ReplyComposer({ ticketId, disabled = false }: ReplyComposerProps
           </div>
 
           {fileError ? (
-            <p className="text-xs text-destructive flex items-center gap-1">
-              <AlertCircle className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 p-2.5 text-xs text-destructive font-medium animate-in fade-in duration-200">
+              <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{fileError}</span>
-            </p>
+            </div>
           ) : null}
         </div>
 

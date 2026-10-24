@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertCircle, CheckCircle2, Send } from "lucide-react";
-import { type FormEvent, useActionState, useEffect, useRef } from "react";
+import { type FormEvent, useActionState, useEffect, useRef, useState } from "react";
 
 import { Spinner } from "@/components/common/spinner";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ const initialState: ActionResult = { success: false };
 export function TicketCreateForm({ ticketGroups }: TicketCreateFormProps) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(createTicketAction, initialState);
+  const [hasFileError, setHasFileError] = useState(false);
   const isSubmittingRef = useRef(false);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export function TicketCreateForm({ ticketGroups }: TicketCreateFormProps) {
   const isLocked = isPending || state.success;
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    if (isSubmittingRef.current || isLocked) {
+    if (isSubmittingRef.current || isLocked || hasFileError) {
       e.preventDefault();
       return;
     }
@@ -84,7 +85,7 @@ export function TicketCreateForm({ ticketGroups }: TicketCreateFormProps) {
       </div>
 
       {/* Attachment Upload */}
-      <TicketFilePicker disabled={isLocked} />
+      <TicketFilePicker disabled={isLocked} onErrorChange={setHasFileError} />
 
       {/* State Feedback */}
       {state.error ? (

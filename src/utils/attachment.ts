@@ -10,6 +10,28 @@ const IMAGE_EXTENSIONS = new Set([
 ]);
 
 /**
+ * Maximum allowed file attachment size: 5MB in bytes
+ */
+export const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024; // 5MB (5,242,880 bytes)
+export const MAX_ATTACHMENT_SIZE_MB = 5;
+
+/**
+ * Checks whether a given file size is within the allowed limit (5MB).
+ */
+export function isFileSizeValid(sizeInBytes: number): boolean {
+  return sizeInBytes <= MAX_ATTACHMENT_SIZE;
+}
+
+/**
+ * Formats bytes to a human-readable size string (e.g. "4.2 MB", "850 KB").
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
  * Checks if a given attachment filename or URL is an image.
  */
 export function isImageAttachment(fileName: string | null | undefined): boolean {

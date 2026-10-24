@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { getAccessToken } from "@/lib/auth/token-store";
 import { NotificationHub } from "@/lib/realtime/notification-hub";
 import { createTicket } from "@/services/ticket-service";
+import { MAX_ATTACHMENT_SIZE } from "@/utils/attachment";
 
 export interface ActionResult {
   success: boolean;
@@ -46,6 +47,12 @@ export async function createTicketAction(
 
     const attachment = formData.get("attachment") as File | null;
     if (attachment && attachment.size > 0) {
+      if (attachment.size > MAX_ATTACHMENT_SIZE) {
+        return {
+          success: false,
+          error: "حجم فایل پیوست نباید بیش از ۵ مگابایت باشد (حداکثر ۵ مگابایت)",
+        };
+      }
       payload.append("attachment", attachment);
     }
 

@@ -13,6 +13,12 @@ const nextConfig = {
   images: {
     remotePatterns: [],
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
+  },
+  allowedDevOrigins: ['192.168.77.12'],
   async rewrites() {
     return [
       {

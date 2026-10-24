@@ -8,6 +8,7 @@ import { Spinner } from "@/components/common/spinner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { replyTicketAction } from "@/features/tickets/actions/reply-ticket-action";
+import { formatFileSize, MAX_ATTACHMENT_SIZE, MAX_ATTACHMENT_SIZE_MB } from "@/utils/attachment";
 
 interface ChatComposerProps {
   ticketId: number;
@@ -17,9 +18,7 @@ interface ChatComposerProps {
   onSendError?: (optimisticId: number) => void;
 }
 
-// NOTE: add `fileTooLarge` (with a `{maxSize}` param) and `sendError` keys
-// to the `tickets.chat` translation namespace if they don't exist yet.
-const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
+const MAX_FILE_SIZE = MAX_ATTACHMENT_SIZE; // 5MB
 
 export function ChatComposer({
   ticketId,
@@ -55,7 +54,12 @@ export function ChatComposer({
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setFileError(t("fileTooLarge", { maxSize: "15MB" }));
+      const formattedSize = formatFileSize(file.size);
+      const errorMsg =
+        t("fileSizeErrorDetailed", { size: formattedSize }) ||
+        t("fileTooLarge", { maxSize: "5MB" }) ||
+        `حجم فایل انتخابی (${formattedSize}) بیش از حد مجاز (${MAX_ATTACHMENT_SIZE_MB} مگابایت) است.`;
+      setFileError(errorMsg);
       setSelectedFile(null);
       e.target.value = "";
       return;
@@ -107,6 +111,22 @@ export function ChatComposer({
         } else if (typeof optId === "number") {
           onSendSuccess?.(optId, res.replyId);
         }
+      } catch (err: unknown) {
+        console.error("Failed to send reply:", err);
+        const isSizeErr =
+          err instanceof Error &&
+          (err.message.includes("413") ||
+            err.message.toLowerCase().includes("limit") ||
+            err.message.toLowerCase().includes("body"));
+        const message = isSizeErr
+          ? (t("fileTooLarge", { maxSize: "5MB" }) || "حجم فایل نباید بیش از ۵ مگابایت باشد.")
+          : (t("sendError") || "خطا در ارسال پیام. لطفاً دوباره تلاش کنید.");
+        setActionError(message);
+        setText(trimmed);
+        setSelectedFile(fileToSend ?? null);
+        if (typeof optId === "number") {
+          onSendError?.(optId);
+        }
       } finally {
         isSendingRef.current = false;
       }
@@ -138,7 +158,7 @@ export function ChatComposer({
             <Paperclip className="h-3.5 w-3.5 text-primary" />
             <span className="truncate max-w-[220px] font-medium text-foreground">{selectedFile.name}</span>
             <span className="text-muted-foreground text-[10px]">
-              ({(selectedFile.size / 1024).toFixed(1)} KB)
+              ({formatFileSize(selectedFile.size)})
             </span>
             <button
               type="button"
@@ -152,10 +172,10 @@ export function ChatComposer({
         ) : null}
 
         {fileError ? (
-          <p className="text-xs text-destructive flex items-center gap-1">
-            <AlertCircle className="h-3.5 w-3.5" />
+          <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 p-2 text-xs text-destructive font-medium animate-in fade-in duration-200">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
             <span>{fileError}</span>
-          </p>
+          </div>
         ) : null}
 
         {/* Input Bar */}
@@ -177,7 +197,7 @@ export function ChatComposer({
             onClick={() => fileInputRef.current?.click()}
             disabled={isPending}
             className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
-            title={t("attachFile")}
+            title={`${t("attachFile")} (حداکثر ۵ مگابایت)`}
           >
             <Paperclip className="h-4 w-4" />
           </Button>

@@ -40,7 +40,11 @@
     "downloadOriginal": "Download Original",
     "openNewTab": "Open in New Tab",
     "ticketClosedNotice": "This ticket is closed. New replies cannot be submitted.",
-    "scrollToBottom": "Jump to latest messages"
+    "scrollToBottom": "Jump to latest messages",
+    "fileTooLarge": "File size cannot exceed {maxSize}.",
+    "fileSizeError": "File size cannot exceed 5MB.",
+    "fileSizeErrorDetailed": "Selected file size ({size}) exceeds the maximum limit (5MB).",
+    "sendError": "Failed to send message. Please try again."
   },
   "meta": {
     "actions": "Ticket Actions",
@@ -92,10 +96,11 @@
     "subjectPlaceholder": "Brief summary of the issue...",
     "description": "Description",
     "descriptionPlaceholder": "Detailed explanation of the issue or steps to reproduce...",
-    "attachment": "Attachment (Optional)",
-    "chooseFile": "Choose File (Image, PDF, Excel...)",
+    "attachment": "Attachment (Optional - Max 5MB)",
+    "chooseFile": "Choose File (Image, PDF, Excel... - Max 5MB)",
     "changeFile": "Change File",
-    "fileSizeError": "File size cannot exceed 15MB",
+    "fileSizeError": "File size cannot exceed 5MB.",
+    "fileSizeErrorDetailed": "Selected file size ({size}) exceeds the maximum limit (5MB).",
     "submitTicket": "Submit Ticket",
     "submittingTicket": "Submitting...",
     "success": "Ticket created successfully! Redirecting to ticket list..."
